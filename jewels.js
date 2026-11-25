@@ -19,14 +19,14 @@ try{best=+localStorage.getItem('cj-best')||0;}catch(e){}
 
 // ---------- renderer / scene / camera ----------
 const R=new THREE.WebGLRenderer({canvas:$('c'),antialias:true});
-R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;
+R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFShadowMap;
 R.outputColorSpace=THREE.SRGBColorSpace;
 R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.08;
 const scene=new THREE.Scene();
 const cam=new THREE.PerspectiveCamera(FOV,1,.1,200);
 const camBase=new THREE.Vector3(0,0,10);
 function layout(){
-  const D=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
+  const D=Math.min(devicePixelRatio||1,1.5);W=innerWidth;H=innerHeight;
   R.setPixelRatio(D);R.setSize(W,H,false);
   cam.aspect=W/H;cam.updateProjectionMatrix();
   const t=Math.tan(THREE.MathUtils.degToRad(FOV/2));
@@ -338,3 +338,66 @@ function frame(now){
 newBoard();
 state='fall';
 requestAnimationFrame(frame);
+
+/* ===== polish pass: visuals + feel (game logic untouched) ===== */
+scene.fog=new THREE.Fog('#0b0820',20,42);
+// 1. aurora ribbons drifting behind the board
+const auroraT=(()=>{const c=document.createElement('canvas');c.width=256;c.height=64;const g=c.getContext('2d');const gr=g.createLinearGradient(0,0,256,0);gr.addColorStop(0,'rgba(120,255,220,0)');gr.addColorStop(.5,'rgba(160,120,255,.9)');gr.addColorStop(1,'rgba(255,120,200,0)');g.fillStyle=gr;g.fillRect(0,0,256,64);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;})();
+const aurora=[];
+for(let i=0;i<3;i++){const m=new THREE.Mesh(new THREE.PlaneGeometry(36,4.2),new THREE.MeshBasicMaterial({map:auroraT,transparent:true,opacity:.22,depthWrite:false,blending:THREE.AdditiveBlending}));m.position.set(0,6+i*2.2,-12-i*1.5);m.rotation.z=(i-1)*.08;scene.add(m);aurora.push(m);}
+// 2. shooting stars
+const shoots=[];
+const shootGeo=new THREE.BoxGeometry(2.6,.035,.02);
+// 3. swap-wiggle when a swap does not match
+let wig=0;
+// 4. tap ring when selecting a gem
+addEventListener('pointerdown',e=>{const p=cellAt(e.clientX,e.clientY);if(p&&state==='idle')ring(cx(p.c),cy(p.r),'#ffffff',.6*S);});
+// 5. combo bar colour climbs with the chain
+const cbf=$('cbf');
+// 6. HUD score punch
+let lastScore=0;
+// 7. board breathes; tray hue lifts on combos
+const _trySwap=trySwap;
+trySwap=function(a,b){_trySwap(a,b);if(state==='wait'){wig=1;}};
+const _update=update;
+update=function(dt){_update(dt);wig=Math.max(0,wig-dt*2.2);
+  if(comboT>0)trayMat.color.lerp(new THREE.Color(chain>=3?'#7a3fc4':'#4b2fa3'),Math.min(1,dt*3));
+};
+const _check=check;
+check=function(){const before=chain;_check();if(chain>before&&chain>=2){ring(0,0,'#ffd66b',S*4.8);}};
+const _render3=render3;
+render3=function(dt,t){_render3(dt,t);
+  // 8. gentle idle sway on every settled gem
+  if(state==='idle')for(const g of cells()){if(g.o3)g.o3.rotation.y+=Math.sin(t*1.7+g.r*.9+g.c*1.3)*.03;}
+  // 9. hover cursor
+  R.domElement.style.cursor=(hov&&state==='idle'&&!drag)?'pointer':'default';
+  // 10. invalid-swap wiggle
+  board.position.x=Math.sin(t*46)*wig*.09;
+  // 11. board breath
+  board.scale.setScalar(1+.006*Math.sin(t*1.6)+(comboT>0?.01*Math.min(1,comboT):0));
+  // 12. combo bar colour
+  cbf.style.background=chain>=3?'linear-gradient(90deg,#c5b6ff,#ff6fb5)':chain>=2?'linear-gradient(90deg,#9fffe0,#ffd66b)':'linear-gradient(90deg,#ffd66b,#ff6fb5)';
+  // 13. score punch
+  if(score!==lastScore){lastScore=score;const sc=$('sc');sc.classList.remove('punch');void sc.offsetWidth;sc.classList.add('punch');}
+  // 14. sleeping cat drops Zzz
+  if(mood==='sleep'&&Math.random()<dt*.9)pop(cx(N/2),cy(-.5),'z',"#c5b6ff");
+  // 15. aurora ribbons slide and breathe
+  for(let i=0;i<aurora.length;i++){const a=aurora[i];a.position.x=Math.sin(t*.12+i*2)*4;a.material.opacity=.16+.08*Math.sin(t*.7+i);}
+};
+const _ambient=ambient;
+ambient=function(dt,t){_ambient(dt,t);
+  // 16. shooting stars now and then
+  if(Math.random()<dt*.18){const m=new THREE.Mesh(shootGeo,new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:0,depthWrite:false}));m.position.set(rnd(-10,6),rnd(4,9),-20);m.rotation.z=-.35;scene.add(m);shoots.push({m,life:0});}
+  for(const s of shoots){s.life+=dt;s.m.position.x+=dt*14;s.m.position.y-=dt*5;s.m.material.opacity=Math.max(0,1-s.life*1.4)*.9;}
+  for(const s of shoots.filter(s=>s.life>1.2)){scene.remove(s.m);s.m.material.dispose();}
+  for(let i=shoots.length-1;i>=0;i--)if(shoots[i].life>1.2)shoots.splice(i,1);
+  // 17. moon halo breathes
+  moonGlow.scale.setScalar(12+.6*Math.sin(t*.9));
+  // 18. stars twinkle individually (cheap: jitter the shared opacity)
+  starMat.size=.2+.04*Math.sin(t*2.3);
+};
+// 19. vignette element
+const vg=document.createElement('div');vg.id='vig';document.body.prepend(vg);
+// 20. flash on big combo banner
+const _say=say;
+say=function(t,col){_say(t,col);if(/PURR|COMBO/.test(t)){vg.classList.remove('go');void vg.offsetWidth;vg.classList.add('go');}};

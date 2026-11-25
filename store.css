@@ -11,7 +11,6 @@
 .sinfo div{flex:1;min-width:0;display:flex;flex-direction:column}
 .sinfo b{color:#fff;font:800 14px system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sinfo small{color:#a9a3d9;font:600 11px system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sget{border:0;border-radius:999px;padding:6px 14px;background:#2fb4ff;color:#fff;font:800 12px system-ui,sans-serif;cursor:pointer;flex-shrink:0}
 /* pick step: chosen game bar, game tiles hidden */
 #pkbar{display:none;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:6px}
 body.pick #pkbar{display:flex}

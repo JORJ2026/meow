@@ -16,3 +16,18 @@ canvas{display:block;width:100vw;height:100dvh;filter:saturate(1.12) contrast(1.
 @keyframes zrise{0%{opacity:0;transform:translate(0,0) scale(.6)}20%{opacity:1}100%{opacity:0;transform:translate(22px,-110px) scale(1.25)}}
 @keyframes pulse{50%{transform:scale(1.06);background:rgba(255,255,255,.32)}}
 #back{position:fixed;top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);color:#fff;border-radius:10px;text-decoration:none;font:700 18px system-ui;z-index:4}
+
+#pop{position:fixed;inset:0;pointer-events:none;z-index:2}
+.pp{position:fixed;transform:translate(-50%,-50%);font:900 clamp(20px,5vh,28px) system-ui,sans-serif;color:#fff;text-shadow:0 3px 0 #7a3b12;pointer-events:none;animation:pp .9s ease-out forwards}
+@keyframes pp{to{transform:translate(-50%,-160%);opacity:0}}
+#flash{position:fixed;inset:0;background:rgba(255,40,60,.45);opacity:0;pointer-events:none;z-index:2}
+#flash.go{animation:fl .5s ease-out}
+@keyframes fl{0%{opacity:1}100%{opacity:0}}
+#ms{position:fixed;left:50%;top:26%;transform:translateX(-50%);font:900 clamp(26px,7vh,46px) system-ui,sans-serif;color:#fff;text-shadow:0 4px 0 #7a3b12;opacity:0;pointer-events:none;z-index:2;white-space:nowrap}
+#ms.go{animation:msg 1.6s ease-out}
+@keyframes msg{0%{opacity:0;transform:translate(-50%,10px) scale(.7)}15%{opacity:1;transform:translate(-50%,0) scale(1.08)}70%{opacity:1}100%{opacity:0}}
+#hud.bump{animation:hb .35s ease-out}
+@keyframes hb{40%{transform:scale(1.18)}}
+#pz{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(60,25,10,.45);color:#fff;font:900 clamp(30px,9vh,60px) system-ui,sans-serif;text-shadow:0 4px 0 #7a3b12;z-index:3;cursor:pointer}
+#pz.hide{display:none}
+#pz small{font:800 clamp(12px,2.6vh,16px) system-ui,sans-serif;letter-spacing:2px;opacity:.9}

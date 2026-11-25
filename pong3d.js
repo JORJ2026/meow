@@ -10,7 +10,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 const cvs=$('c');
 const R=new THREE.WebGLRenderer({canvas:cvs,antialias:true});
-R.setPixelRatio(Math.min(2,devicePixelRatio));R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;
+R.setPixelRatio(Math.min(1.5,devicePixelRatio));R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFShadowMap;
 R.toneMapping=THREE.ACESFilmicToneMapping;
 const scene=new THREE.Scene();scene.fog=new THREE.Fog('#1d1640',32,60);
 const cam=new THREE.PerspectiveCamera(40,1,.1,120);let DIST=20,camD=20;
@@ -31,7 +31,7 @@ const netT=tex(cv(64,32,(g,w,h)=>{g.strokeStyle='rgba(255,255,255,.95)';g.lineWi
 const hemi=new THREE.HemisphereLight('#e6f2ff','#3a2a5a',1.1);scene.add(hemi);
 const hemiT=new THREE.Color('#e6f2ff');
 const sun=new THREE.DirectionalLight('#fff1d8',1.6);sun.castShadow=true;sun.position.set(-6,12,4);
-sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-14,right:14,top:10,bottom:-10,near:1,far:40});
+sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-14,right:14,top:10,bottom:-10,near:1,far:40});
 sun.shadow.camera.updateProjectionMatrix();sun.shadow.bias=-.0006;scene.add(sun);
 const rimL=new THREE.DirectionalLight('#ff9ad5',.8);rimL.position.set(9,5,-7);scene.add(rimL);
 const spot=new THREE.SpotLight('#fff4dc',250,40,.7,.8,1.2);spot.position.set(0,14,0);scene.add(spot,spot.target);
@@ -147,9 +147,7 @@ function point(who){
 }
 function sub(h){
   // your paddle: mouse/touch target, or left/right keys
-  if(P.tgt!=null)P.cz+=clamp(P.tgt-P.cz,-16*h,16*h);
-  else P.cz+=((keys.ArrowRight||keys.KeyD?1:0)-(keys.ArrowLeft||keys.KeyA?1:0))*13*h;
-  P.cz=clamp(P.cz,-LIM,LIM);
+  steer(h);
   // dog AI: predict where the ball crosses its line
   let tz=0;
   if(P.vx>0){const t=(DX-P.bx)/P.vx;let zp=P.bz+P.vz*t;const L=2*W0;let s=((zp+W0)%(2*L)+2*L)%(2*L);if(s>L)s=2*L-s;tz=clamp(s-W0+P.aiErr,-LIM,LIM);}
@@ -173,14 +171,25 @@ function end(){
 }
 
 // input: mouse/touch steers your paddle by ray-casting onto the table; keys also work
+// Keys always win while held. The pointer steers only while pressed (mouse button or touch),
+// and every release, blur or tab switch clears both, so the paddle can never get stuck.
 const ray=new THREE.Raycaster(),ndc=new THREE.Vector2(),plane=new THREE.Plane(new THREE.Vector3(0,1,0),0),hp=new THREE.Vector3();
+let drag=false;
 function track(e){const r=cvs.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height*2-1));
   ray.setFromCamera(ndc,cam);if(ray.ray.intersectPlane(plane,hp))P.tgt=clamp(hp.z,-LIM,LIM);}
-cvs.addEventListener('pointerdown',e=>{if(!P.over)track(e);});
-cvs.addEventListener('pointermove',e=>{if(!P.over&&(e.pointerType==='mouse'||e.buttons))track(e);});
-const rel=e=>{if(e.pointerType!=='mouse')P.tgt=null;};
-cvs.addEventListener('pointerup',rel);cvs.addEventListener('pointercancel',rel);
-addEventListener('keydown',e=>{keys[e.code]=1;if(/Arrow|Space/.test(e.code))e.preventDefault();if(/Arrow/.test(e.code))P.tgt=null;});
+function steer(h){
+  const dir=(keys.ArrowRight||keys.KeyD?1:0)-(keys.ArrowLeft||keys.KeyA?1:0);
+  if(dir){P.tgt=null;P.cz+=dir*13*h;}
+  else if(drag&&P.tgt!=null)P.cz+=clamp(P.tgt-P.cz,-16*h,16*h);
+  P.cz=clamp(P.cz,-LIM,LIM);
+}
+function release(){drag=false;P.tgt=null;for(const k in keys)keys[k]=0;}
+cvs.addEventListener('pointerdown',e=>{if(P.over)return;drag=true;track(e);});
+cvs.addEventListener('pointermove',e=>{if(drag&&!P.over&&(e.buttons||e.pointerType==='touch'))track(e);});
+addEventListener('pointerup',release);addEventListener('pointercancel',release);
+addEventListener('blur',release);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)release();});
+addEventListener('keydown',e=>{keys[e.code]=1;if(/Arrow|Space/.test(e.code))e.preventDefault();});
 addEventListener('keyup',e=>{keys[e.code]=0;});
 
 // sizing: keep the whole table and the bigger sprites in view
@@ -202,8 +211,7 @@ function frame(now){
       if(P.serve<=0){P.vx=P.sd*S0;P.vz=rnd(-2.5,2.5);}
       acc=0;
       // paddles still move during the serve pause
-      if(P.tgt!=null)P.cz+=clamp(P.tgt-P.cz,-16*dt,16*dt);
-      P.cz=clamp(P.cz,-LIM,LIM);
+      steer(dt);
       // serve pulse rings on the centre spot
       serveTick-=dt;if(serveTick<=0){ring(0,0,'#ffffff',.6,3);serveTick=.5;}
     }else{acc+=dt;while(acc>=H&&!P.over&&P.serve<=0){sub(H);acc-=H;}if(P.serve>0)acc=0;}

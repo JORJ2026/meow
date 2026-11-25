@@ -36,7 +36,7 @@ const cellX=c=>c-COLS/2+.5, cellY=r=>ROWS/2-r-.5;
 
 // ---------- renderer / scene ----------
 const R=new THREE.WebGLRenderer({canvas:$('c'),antialias:true});
-R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;
+R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFShadowMap;
 R.outputColorSpace=THREE.SRGBColorSpace;R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.05;
 const scene=new THREE.Scene();
 scene.background=gradTex([[0,'#2c1878'],[.55,'#170c42'],[1,'#0a0522']]);
@@ -66,7 +66,7 @@ for(const s of [-1,1]){const w=new THREE.Mesh(new THREE.BoxGeometry(.05,ROWS+.2,
 // ---------- camera / layout ----------
 let W=0,H=0,dist=30,unitPx=40,yaw=0,pitch=.42,orb=null,shake=0;
 function layout(){
-  const D=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
+  const D=Math.min(devicePixelRatio||1,1.5);W=innerWidth;H=innerHeight;
   R.setPixelRatio(D);R.setSize(W,H,false);cam.aspect=W/H;cam.updateProjectionMatrix();
   const t=Math.tan(THREE.MathUtils.degToRad(FOV/2));
   dist=Math.max(12.5/t,7.4/(t*cam.aspect));
@@ -270,3 +270,53 @@ function frame(now){
 layout();
 restart();
 requestAnimationFrame(frame);
+
+/* ===== polish pass: visuals + feel (rules untouched) ===== */
+scene.fog=new THREE.Fog('#0b0820',24,46);
+// starfield
+{const sp=new Float32Array(260*3);for(let i=0;i<260;i++){sp[i*3]=rnd(-30,30);sp[i*3+1]=rnd(-14,20);sp[i*3+2]=rnd(-30,-12);}
+ const sg=new THREE.BufferGeometry();sg.setAttribute('position',new THREE.BufferAttribute(sp,3));
+ scene.add(new THREE.Points(sg,new THREE.PointsMaterial({color:'#ffffff',size:.18,transparent:true,opacity:.7,depthWrite:false})));}
+// well rim glow (shifts toward red as the stack rises)
+const rimM=new THREE.LineBasicMaterial({color:'#9a7cff',transparent:true,opacity:.6});
+{const corners=[[-COLS/2,-ROWS/2],[COLS/2,-ROWS/2],[COLS/2,ROWS/2],[-COLS/2,ROWS/2],[-COLS/2,-ROWS/2]];
+ const p3=[];for(let i=0;i<4;i++)p3.push(corners[i][0],corners[i][1],-.5,corners[i+1][0],corners[i+1][1],-.5);
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p3,3));scene.add(new THREE.LineSegments(g,rimM));}
+// landing dust puffs
+const dustGeo=new THREE.SphereGeometry(.09,8,6);
+function dust(x,y,n,col){for(let i=0;i<n;i++){const m=new THREE.Mesh(dustGeo,new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.6,depthWrite:false}));m.position.set(x+rnd(-.4,.4),y,.2);scene.add(m);parts.push({m,v:new THREE.Vector3(rnd(-1,1),rnd(.3,1.2),rnd(-.2,.2)),life:0,max:rnd(.35,.6)});}}
+// stack height -> danger 0..1 (top 6 rows)
+function danger(){for(let r=0;r<ROWS;r++)if(stack[r].some(v=>v>=0))return clamp(1-r/6,0,1);return 0;}
+// lock: dust at the piece, level-up banner, clear flourish
+let lvlSeen=1;
+const _lock=lock;
+lock=function(){
+  const x=cur?cur.x:0,y=cur?cur.y:0,m=cur?cur.m:null;
+  _lock();
+  if(m){let sx=0,sy=0,n=0;for(let r=0;r<4;r++)for(let c=0;c<4;c++)if(m[r][c]){sx+=x+c;sy+=y+r;n++;}
+    if(n)dust(cellX(Math.round(sx/n)),cellY(Math.round(sy/n))-.4,6,'#d9c8ff');}
+  if(state==='play'&&level>lvlSeen){lvlSeen=level;say('LEVEL '+level+' 🐾','#c5b6ff');}
+  if(state==='clear')for(let i=0;i<3;i++)dust(rnd(-2,2),rnd(-3,3),4,'#ffd66b');
+};
+// hard drop: extra shake and dust for big drops
+const _hard=hardDrop;
+hardDrop=function(){const b=score;_hard();if(score-b>=10){shake=Math.max(shake,.4);dust(0,-ROWS/2+1,6,'#9ff7ff');}};
+// vignette + score punch elements
+const vg=document.createElement('div');vg.id='vig';document.body.prepend(vg);
+const scEl=$('sc');let scSeen=0;
+// extras loop, separate from the game loop
+let exT=0;
+function extras(now){
+  const t=now/1000;exT=t;
+  const d=danger();
+  rimM.color.setRGB(.6+.4*d,.49-.3*d,1-.7*d);
+  rimM.opacity=.5+.2*Math.sin(t*2)*(d>0?1:.3)+d*.3;
+  // sway the view a touch
+  if(!orb&&!gest)yaw+=(Math.sin(t*.25)*.12-yaw)*.02;
+  // characters: gentle idle bob
+  if(state!=='over'){CH.cat.rotation.z=Math.sin(t*1.8)*.03;CH.dog.rotation.z=Math.sin(t*1.5+1)*.03;}
+  // score punch
+  if(score!==scSeen){scSeen=score;scEl.classList.remove('punch');void scEl.offsetWidth;scEl.classList.add('punch');}
+  requestAnimationFrame(extras);
+}
+requestAnimationFrame(extras);

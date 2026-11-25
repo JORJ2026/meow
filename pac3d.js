@@ -68,8 +68,10 @@ const keyDir={ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0],ArrowUp:[
 const held=[];
 addEventListener('keydown',e=>{const d=keyDir[e.code];if(!d)return;e.preventDefault();if(!held.includes(e.code))held.push(e.code);Z.want=d;});
 addEventListener('keyup',e=>{const i=held.indexOf(e.code);if(i>=0)held.splice(i,1);});
+addEventListener('blur',()=>{held.length=0;});
 let sx=0,sy=0,sOn=false;
 addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY;sOn=true;});
+addEventListener('pointercancel',()=>{sOn=false;});
 addEventListener('pointerup',e=>{if(!sOn)return;sOn=false;const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))<24)return;
   Z.want=Math.abs(dx)>Math.abs(dy)?(dx>0?[1,0]:[-1,0]):(dy>0?[0,1]:[0,-1]);});
 
@@ -95,7 +97,7 @@ function loseMsg(){showMsg('The dogs got you! 🐕',pcName(I)+' · ⭐ '+Z.score
 function winMsg(st){const b=[];if(I<99)b.push(['Next maze ▶',()=>go(I+1),'on']);b.push(['Replay',()=>go(I)],['Menu',()=>{location.href='index.html';}]);
   showMsg('Kibble cleared! 🐾',pcName(I)+' · ⭐ '+Z.score+' · '+'★'.repeat(st)+'☆'.repeat(3-st),b);}
 
-function eatHere(p){
+let eatHere=function eatHereFn(p){
   const x=p.tx,y=p.ty,v=Z.pel[y][x];if(!v)return;Z.pel[y][x]=0;Z.left--;
   const wx=x+.5,wz=y+.5;
   if(v===1){Z.score+=10;hideKib(x,y);burst(wx,.3,wz,'#ffd27a',4);}
@@ -103,7 +105,7 @@ function eatHere(p){
     burst(wx,.4,wz,'#c08bff',16);ring(wx,.1,wz,'#c08bff');pop(wx,.9,wz,'CATNIP!','#c08bff');
     for(const g of Z.gh)if(g.mode==='chase'||g.mode==='scatter'){if(g.dx||g.dy){g.tx=wrap(g.tx+g.dx,g.ty);g.ty+=g.dy;g.dx=-g.dx;g.dy=-g.dy;g.p=1-g.p;}g.mode='fright';}}
 }
-function pcWin(){
+let pcWin=function pcWinFn(){
   Z.over='win';const st=Z.lives>=3?3:Z.lives===2?2:1;Z.stars=st;
   PR.pac.st[I]=Math.max(PR.pac.st[I]||0,st);PR.pac.at=Math.max(PR.pac.at,I+1);savePR();
   if(Z.score>BEST){BEST=Z.score;try{localStorage.setItem(BKEY,String(BEST));}catch(_){}}
@@ -119,9 +121,11 @@ function tick(){
   if(Z.fr>0){Z.fr--;if(Z.fr===0)Z.combo=0;}
   const sp=M.sp*(Z.fr>0?1.1:1);
   if(p.dx===0&&p.dy===0){
-    if(Z.want&&pcOpen(p.tx+Z.want[0],p.ty+Z.want[1])){p.dx=Z.want[0];p.dy=Z.want[1];p.p=0;if(p.dx)p.face=p.dx;}
+    if(Z.want&&pcOpen(p.tx+Z.want[0],p.ty+Z.want[1])){p.dx=Z.want[0];p.dy=Z.want[1];p.p=0;Z.want=null;if(p.dx)p.face=p.dx;}
   }else{
-    if(Z.want&&Z.want[0]===-p.dx&&Z.want[1]===-p.dy){p.tx=wrap(p.tx+p.dx,p.ty);p.ty+=p.dy;p.dx=-p.dx;p.dy=-p.dy;p.p=1-p.p;if(p.dx)p.face=p.dx;}
+    if(Z.want&&Z.want[0]===-p.dx&&Z.want[1]===-p.dy){p.tx=wrap(p.tx+p.dx,p.ty);p.ty+=p.dy;p.dx=-p.dx;p.dy=-p.dy;p.p=1-p.p;Z.want=null;if(p.dx)p.face=p.dx;}
+    // corner cut: a side turn pressed just after passing a junction (first half of the tile) still takes effect
+    if(Z.want&&p.p<.5&&Z.want[0]*p.dx===0&&Z.want[1]*p.dy===0&&pcOpen(p.tx+Z.want[0],p.ty+Z.want[1])){p.dx=Z.want[0];p.dy=Z.want[1];Z.want=null;if(p.dx)p.face=p.dx;}
     p.p+=sp;
     if(p.p>=1){
       p.tx=wrap(p.tx+p.dx,p.ty);p.ty+=p.dy;p.p=0;
@@ -130,7 +134,7 @@ function tick(){
       if(!Z.treat&&(eatN===70||eatN===170)&&Z.eaten<2){Z.treat={x:M.sx,y:M.sy,t:600};Z.eaten++;}
       if(Z.treat&&p.tx===Z.treat.x&&p.ty===Z.treat.y){const pts=[100,300,500,700,1000][M.treat];Z.score+=pts;pop(p.tx+.5,.9,p.ty+.5,'+'+pts,'#ffd84a');burst(p.tx+.5,.5,p.ty+.5,'#ffd84a',14);Z.treat=null;}
       if(Z.left<=0){pcWin();return;}
-      if(Z.want&&pcOpen(p.tx+Z.want[0],p.ty+Z.want[1])){p.dx=Z.want[0];p.dy=Z.want[1];}
+      if(Z.want&&pcOpen(p.tx+Z.want[0],p.ty+Z.want[1])){p.dx=Z.want[0];p.dy=Z.want[1];Z.want=null;}
       else if(!pcOpen(p.tx+p.dx,p.ty+p.dy)){p.dx=0;p.dy=0;}
       if(p.dx)p.face=p.dx;
     }
@@ -160,7 +164,7 @@ function tick(){
 // ---------- three.js scene ----------
 const cvs=$('c');
 const R3=new THREE.WebGLRenderer({canvas:cvs,antialias:true});
-R3.setPixelRatio(Math.min(2,devicePixelRatio));R3.shadowMap.enabled=true;R3.shadowMap.type=THREE.PCFSoftShadowMap;
+R3.setPixelRatio(Math.min(1.5,devicePixelRatio));R3.shadowMap.enabled=true;R3.shadowMap.type=THREE.PCFShadowMap;
 R3.toneMapping=THREE.ACESFilmicToneMapping;R3.toneMappingExposure=1.08;
 const scene=new THREE.Scene();
 const cam=new THREE.PerspectiveCamera(46,1,.1,150);
@@ -172,7 +176,7 @@ scene.background=gradTex(TH.sky[0],TH.sky[1]);
 scene.fog=new THREE.Fog(TH.sky[1],26,56);
 
 scene.add(new THREE.HemisphereLight(TH.sky[1],TH.side2,1.15));
-const sun=new THREE.DirectionalLight('#fff1d6',1.9);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+const sun=new THREE.DirectionalLight('#fff1d6',1.9);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);
 Object.assign(sun.shadow.camera,{left:-19,right:19,top:19,bottom:-19,near:1,far:70});sun.shadow.camera.updateProjectionMatrix();sun.shadow.bias=-.0008;
 sun.position.set(CX-9,22,CZ+12);sun.target.position.set(CX,0,CZ);scene.add(sun,sun.target);
 const rim=new THREE.DirectionalLight(TH.acc,.7);rim.position.set(CX+14,8,CZ-16);scene.add(rim);
@@ -303,8 +307,13 @@ function frameFx(now){
   // dust
   motes.rotation.y=now*.00005;
 }
+let rX=null,rZ=null;
 function render(now){
-  const p=Z.p,[px,pz]=pcPos(p),tx=px+.5,tz=pz+.5;
+  const p=Z.p,[px,pz]=pcPos(p);
+  // ease the drawn position so corner cuts glide instead of snapping (teleports still snap)
+  let tx=px+.5,tz=pz+.5;
+  if(rX===null||Math.hypot(tx-rX,tz-rZ)>2){rX=tx;rZ=tz;}else{rX+=(tx-rX)*.35;rZ+=(tz-rZ)*.35;}
+  tx=rX;tz=rZ;
   const dead=p.dead>0,a=dead?1-p.dead/70:0;
   const moving=(p.dx||p.dy)&&!dead&&Z.ready<=0&&!Z.over;
   const hop=Z.over==='win'?Math.abs(Math.sin(now*.008))*.55:(moving?Math.abs(Math.sin(now*.025))*.07:0);
@@ -353,3 +362,36 @@ function loop(now){
 }
 pcReset();
 requestAnimationFrame(loop);
+
+/* ===== polish pass: visuals + feel (rules untouched) ===== */
+// warm gold flash + confetti on a cleared maze
+const _pcWin=pcWin;
+pcWin=function(){const was=Z.over;_pcWin();if(!was&&Z.over==='win'){flash('#ffd84a');for(const c of ['#ffd84a','#ff77b7','#7fe3ff','#9be564'])burst(Z.p.tx+.5,1.2,Z.p.ty+.5,c,12);}};
+// catnip: a little pop when a ghost is eaten and a ring on the cat
+const _eat=eatHere;
+eatHere=function(p){const before=Z.score;_eat(p);if(Z.score-before>=50)ring(p.tx+.5,.1,p.ty+.5,'#c08bff');};
+// extras loop: trail, treat spawn ring, catnip tint, kibble pulse, motes bob
+let lastTreat=null,trailT=0,lastScore=0,puls=0;
+const vigEl=document.getElementById('vig');
+const scEl=document.getElementById('sc');
+function extras(now){
+  const t=now/1000,dt=1/60;
+  // treat appears: ring on the spawn tile
+  if(Z.treat&&Z.treat!==lastTreat)ring(Z.treat.x+.5,.1,Z.treat.y+.5,'#ffd84a');
+  lastTreat=Z.treat;
+  // catnip tint on the vignette
+  vigEl.style.background=Z.fr>0?'radial-gradient(ellipse at center,transparent 50%,rgba(140,80,255,.55))':'radial-gradient(ellipse at center,transparent 55%,rgba(8,4,20,.75))';
+  // kibble gentle glow pulse
+  kibM.material.emissiveIntensity=.25+.2*Math.sin(t*3);
+  // motes drift up and down
+  motes.position.y=Math.sin(t*.5)*.4;
+  // light trail behind the cat while moving
+  const p=Z.p;
+  if(!p.dead&&(p.dx||p.dy)&&!Z.over&&Z.ready<=0){trailT+=dt;if(trailT>.09){trailT=0;const [px,pz]=pcPos(p);burst(px+.5,.12,pz+.5,TH.acc,1);}}
+  // score punch
+  if(Z.score!==lastScore){lastScore=Z.score;scEl.style.transition='none';scEl.style.transform='scale(1.2)';requestAnimationFrame(()=>{scEl.style.transition='transform .25s';scEl.style.transform='scale(1)';});}
+  // frightened ghosts: a soft pulse on the vignette
+  if(Z.fr>0&&Z.fr<90){puls=(puls+1)%20;}
+  requestAnimationFrame(extras);
+}
+requestAnimationFrame(extras);

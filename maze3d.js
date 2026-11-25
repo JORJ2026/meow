@@ -29,12 +29,12 @@ let dirty=false;
 // ---------- three.js scene ----------
 const cvs=$('c');
 const R=new THREE.WebGLRenderer({canvas:cvs,antialias:true});
-R.setPixelRatio(Math.min(2,devicePixelRatio));R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;
+R.setPixelRatio(Math.min(1.5,devicePixelRatio));R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFShadowMap;
 R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.05;
 const scene=new THREE.Scene();scene.background=new THREE.Color('#2a2050');scene.fog=new THREE.Fog('#2a2050',13,30);
 const cam=new THREE.PerspectiveCamera(52,1,.1,120);
 scene.add(new THREE.HemisphereLight('#e6f2ff','#4a3560',1.2));
-const sun=new THREE.DirectionalLight('#fff3dc',1.8);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+const sun=new THREE.DirectionalLight('#fff3dc',1.8);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);
 Object.assign(sun.shadow.camera,{left:-11,right:11,top:11,bottom:-11,near:1,far:60});sun.shadow.camera.updateProjectionMatrix();sun.shadow.bias=-.0008;
 scene.add(sun,sun.target);
 const rim=new THREE.DirectionalLight('#ff8fd6',.5);rim.position.set(-6,5,-8);scene.add(rim);
@@ -76,7 +76,7 @@ function solid(x,y,open){
   return false;
 }
 function hitAt(px,py,open){for(const [dx,dy] of [[-RAD,-RAD],[RAD,-RAD],[-RAD,RAD],[RAD,RAD]])if(solid(Math.floor((px+dx)/TS),Math.floor((py+dy)/TS),open))return true;return false;}
-function hurt(nm){if(Z.inv>0||Z.nip>0||Z.over)return;Z.hp--;Z.inv=100;Z.shake=.5;say(nm||'OUCH!','#ff4d6d');
+let hurt=function hurtFn(nm){if(Z.inv>0||Z.nip>0||Z.over)return;Z.hp--;Z.inv=100;Z.shake=.5;say(nm||'OUCH!','#ff4d6d');
   if(Z.hp<=0){Z.over='dead';setTimeout(()=>end(),800);}}
 function near(x,y,d){return Math.abs(x*TS+16-Z.px)<d&&Math.abs(y*TS+16-Z.py)<d;}
 function step(){
@@ -114,7 +114,7 @@ function step(){
   }
   if(near(M.gx,M.gy,17))win();
 }
-function win(){
+let win=function winFn(){
   if(Z.over)return;Z.over='win';
   const r=M.totT?Z.got/M.totT:1,stars=r>=.8?3:r>=.5?2:1;Z.stars=stars;
   PR.maze.st[i]=Math.max(PR.maze.st[i]||0,stars);PR.maze.at=Math.max(PR.maze.at||0,i+1);saveP();
@@ -180,3 +180,53 @@ function frame(now){
   R.render(scene,cam);
 }
 requestAnimationFrame(frame);
+
+/* ===== polish pass: visuals + feel (rules untouched) ===== */
+// night sky dome with twinkling stars
+{const sp=new Float32Array(300*3);for(let s=0;s<300;s++){const a=hsh(s*3.1)*6.283,b=.25+hsh(s*7.7)*1.2;sp[s*3]=Math.cos(a)*Math.cos(b)*60;sp[s*3+1]=Math.sin(b)*40+8;sp[s*3+2]=Math.sin(a)*Math.cos(b)*60;}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(sp,3));
+ scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:'#ffffff',size:.35,sizeAttenuation:true,transparent:true,opacity:.75,depthWrite:false})));}
+// goal beacon: warm light and a ring on the ground
+const beacon=new THREE.PointLight('#ffd84a',2.2,6,2);beacon.position.set(M.gx+.5,1.6,M.gy+.5);scene.add(beacon);
+const goalRing=new THREE.Mesh(new THREE.RingGeometry(.5,.62,36),new THREE.MeshBasicMaterial({color:'#ffd84a',transparent:true,opacity:.7,side:THREE.DoubleSide,depthWrite:false}));
+goalRing.rotation.x=-Math.PI/2;goalRing.position.set(M.gx+.5,.07,M.gy+.5);scene.add(goalRing);
+// particle pool (sparkles, dust, confetti, hurt puffs)
+const pGeo=new THREE.BoxGeometry(.09,.09,.09);const parts=[];
+function puff(x,y,z,n,col,up,spread){for(let i=0;i<n;i++){const m=new THREE.Mesh(pGeo,new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:1}));m.position.set(x,y,z);scene.add(m);
+  parts.push({m,v:new THREE.Vector3((Math.random()-.5)*spread,up*(.5+Math.random()*.6),(Math.random()-.5)*spread),life:0,max:.6+Math.random()*.5});}}
+const vg=document.createElement('div');vg.id='vig';document.body.prepend(vg);
+const flash=document.createElement('div');flash.id='hurtfx';document.body.prepend(flash);
+// hurt: red flash + puff, bump the heart counter
+const _hurt=hurt;
+hurt=function(nm){const before=Z.hp;_hurt(nm);if(Z.hp<before){flash.classList.remove('go');void flash.offsetWidth;flash.classList.add('go');puff(Z.px/TS,.5,Z.py/TS,14,'#ff4d6d',2.2,1.6);hpEl.classList.remove('bump');void hpEl.offsetWidth;hpEl.classList.add('bump');}};
+// win: confetti burst on the goal
+const _win=win;
+win=function(){const was=Z.over;_win();if(!was&&Z.over==='win'){for(const c of ['#ffd84a','#ff77b7','#7fe3ff','#9be564','#c08bff'])puff(M.gx+.5,.8,M.gy+.5,10,c,4.5,3.2);}};
+// per-frame extras loop
+let lastGot=0,lastNip=0,zoom=0,stepT=0,lastHp=Z.hp;
+const cvBase=cam.fov;
+function extras(now){
+  const t=now/1000,dt=1/60;
+  // beacon pulse and ring ripple
+  beacon.intensity=2+.6*Math.sin(t*3);
+  const rs=1+((t*.8)%1)*.9;goalRing.scale.set(rs,rs,1);goalRing.material.opacity=.8*(1-((t*.8)%1));
+  // pickups: sparkle when collected
+  if(Z.got>lastGot){for(let k=lastGot;k<Z.got;k++)puff(Z.px/TS,.4,Z.py/TS,6,'#ffd84a',2,1.2);lastGot=Z.got;}
+  // catnip zoom: nudge FOV while zoomed
+  const zt=Z.nip>0?1:0;zoom+=(zt-zoom)*.08;
+  if(Math.abs(cam.fov-(cvBase-zoom*4))>.01){cam.fov=cvBase-zoom*4;cam.updateProjectionMatrix();}
+  // footstep dust while moving
+  if(Z.mv>0){stepT+=dt;if(stepT>.22){stepT=0;puff(Z.px/TS,.05,Z.py/TS,2,'#ffffff',.4,.4);}}
+  // pulse emissives of pickups, doors, portals
+  for(const q of M.treats){if(q.mesh&&!q.got)q.mesh.material.emissiveIntensity=.3+.25*Math.sin(t*4+q.x);}
+  for(const q of M.keys){if(q.mesh)q.mesh.material.emissiveIntensity=.3+.3*Math.sin(t*3+q.y);}
+  // cat bounce when moving
+  cat.scale.y=1+(Z.mv>0?Math.sin(t*18)*.03:0);
+  // sparkle/dust particles update
+  for(let p=parts.length-1;p>=0;p--){const q=parts[p];q.life+=dt;if(q.life>=q.max){scene.remove(q.m);q.m.material.dispose();parts.splice(p,1);continue;}
+    q.v.y-=6*dt;q.m.position.addScaledVector(q.v,dt);q.m.material.opacity=1-q.life/q.max;q.m.rotation.x+=dt*6;}
+  // foes: little waddle
+  for(const f of M.foes){if(f.mesh&&!f.dead)f.mesh.rotation.z=Math.sin(t*12+f.v)*.08;}
+  requestAnimationFrame(extras);
+}
+requestAnimationFrame(extras);

@@ -313,7 +313,7 @@ input,select{background:#241d55;color:#fff;border:2px solid #4b3d9c;border-radiu
 .chip,button.chip{padding:5px 10px;border:2px solid rgba(255,255,255,.15)}.chip.on{border-color:#ffd84a}   /*37 chips*/
 #toast{animation:tin .25s ease-out}@keyframes tin{from{transform:translate(-50%,-8px)}}   /*38 toast slide*/
 #swtoast{letter-spacing:.3px}                                                           /*39*/
-#top{display:flex;gap:6px}#top button{backdrop-filter:blur(3px);box-shadow:2px 2px 0 rgba(0,0,0,.35)}  /*40 icon bar depth*/
+#top{display:flex;gap:6px}#top button{box-shadow:2px 2px 0 rgba(0,0,0,.35)}  /*40 icon bar depth*/
 #top button:active{transform:translate(1px,1px);box-shadow:none}                         /*41 icon press*/
 #pad button{box-shadow:0 4px 0 rgba(0,0,0,.4),inset 0 2px 0 rgba(255,255,255,.2);font-family:system-ui;letter-spacing:.5px} /*42 pad depth*/
 #pad button.dn{transform:translateY(4px) scale(.97);box-shadow:inset 0 2px 6px rgba(0,0,0,.4)}  /*43 pad press*/
@@ -328,7 +328,7 @@ button.b[disabled],button.b.locked{background:#2a2550;color:#8a84b8}            
 /* ===== 50 control & HUD refinements (turn 7) ===== */
 :root{--gold:#ffd84a;--ink:#17121f;--ease:cubic-bezier(.2,.8,.2,1);--glass:linear-gradient(180deg,rgba(255,255,255,.2),rgba(20,14,50,.5))}
 /* touch pad: glassy keys */
-body.mob #pad button{background:var(--glass);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:transform .08s var(--ease),background .12s,box-shadow .12s}   /*1 glass keys 2 key motion*/
+body.mob #pad button{background:var(--glass);transition:transform .08s var(--ease),background .12s,box-shadow .12s}   /*1 glass keys 2 key motion*/
 body.mob #pad button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}                 /*3 pad focus ring*/
 body.mob #pad button[data-k=j]{min-width:84px;font-weight:900;background:linear-gradient(180deg,rgba(90,235,120,.55),rgba(30,140,60,.5))} /*4 jump emphasis 5 jump gradient*/
 body.mob #pad button[data-k=a]{min-width:72px;background:linear-gradient(180deg,rgba(255,190,90,.55),rgba(200,100,20,.45))} /*6 action gradient*/
@@ -431,7 +431,7 @@ body.mob #menu .mleft>.prow>#temple .bt,body.mob #menu .mleft>.prow>#maze .bt,bo
 body.mob #menu .mleft>.prow>#temple .bi,body.mob #menu .mleft>.prow>#maze .bi,body.mob #menu .mleft>.prow>#pong .bi,body.mob #menu .mleft>.prow>#pac .bi,body.mob #menu .mleft>.prow>#tet .bi{width:1.7em;height:1.7em;font-size:.95em;padding:0}
 
 /* ===== new modes: Jewels + Run 3D entries ===== */
-#jewels,#run3d,#maze3d,#pong3d,#pac3d{text-decoration:none;color:inherit}
+#jewels,#run3d,#maze3d,#pong3d,#pac3d,#frog3d{text-decoration:none;color:inherit}
 body.mob #menu .mleft>.prow>#jewels,body.mob #menu .mleft>.prow>#run3d,body.mob #menu .mleft>.prow>#maze3d,body.mob #menu .mleft>.prow>#pong3d{grid-column:auto!important;grid-row:auto!important;order:4!important;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;min-height:clamp(50px,13dvh,62px);padding:4px 2px;font-size:clamp(9px,2.5dvh,11px);text-align:center}
 body.mob #menu .mleft>.prow>#jewels .bw,body.mob #menu .mleft>.prow>#run3d .bw,body.mob #menu .mleft>.prow>#maze3d .bw,body.mob #menu .mleft>.prow>#pong3d .bw{display:flex;flex-direction:column;align-items:center;line-height:1}
 body.mob #menu .mleft>.prow>#jewels .bt,body.mob #menu .mleft>.prow>#run3d .bt,body.mob #menu .mleft>.prow>#maze3d .bt,body.mob #menu .mleft>.prow>#pong3d .bt{font-size:clamp(9px,2.5dvh,11px);letter-spacing:.3px}
@@ -498,3 +498,11 @@ body.mob #menu .mleft>.prow>#pac3d{grid-column:4;grid-row:3;order:4!important;di
 body.mob #menu .mleft>.prow>#pac3d .bw{display:flex;flex-direction:column;align-items:center;line-height:1}
 body.mob #menu .mleft>.prow>#pac3d .bt{font-size:clamp(9px,2.5dvh,11px);letter-spacing:.3px}
 body.mob #menu .mleft>.prow>#pac3d .bi{width:1.7em;height:1.7em;font-size:.95em;padding:0;background:#17121f;color:#ffd84a;display:flex;align-items:center;justify-content:center;border-radius:6px}
+
+/* mobile: world map button during story levels */
+#top #mapb{display:none}
+body.mob #top #mapb.on{display:inline-flex}
+body.mob #menu .mleft>.prow>#frog3d{grid-column:5;grid-row:3;order:4!important;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;min-height:0;height:auto;aspect-ratio:1/1;padding:4px 2px;font-size:clamp(9px,2.5dvh,11px);text-align:center;background:linear-gradient(180deg,#4a3f9c,#3b3280)!important;color:#fff}
+body.mob #menu .mleft>.prow>#frog3d .bw{display:flex;flex-direction:column;align-items:center;line-height:1}
+body.mob #menu .mleft>.prow>#frog3d .bt{font-size:clamp(9px,2.5dvh,11px);letter-spacing:.3px}
+body.mob #menu .mleft>.prow>#frog3d .bi{width:1.7em;height:1.7em;font-size:.95em;padding:0;background:#17121f;color:#ffd84a;display:flex;align-items:center;justify-content:center;border-radius:6px}

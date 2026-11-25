@@ -1,9 +1,9 @@
 // Menu tile previews: hover (mouse) or long press (touch) shows a gameplay screenshot.
 (() => {
   const M = {
-    story: 'img/prev/story.png', run: 'img/prev/run.png', temple: 'img/prev/temple.png',
-    maze: 'img/prev/maze.png', pong: 'img/prev/pong.png', pac: 'img/prev/pac.png',
-    tet: 'img/prev/tet.png', jewels: 'img/prev/jewels.png', run3d: 'img/prev/run3d.png', maze3d: 'img/prev/maze.png', pong3d: 'img/prev/pong.png', pac3d: 'img/prev/pac.png'
+    story: 'img/prev/story.webp', run: 'img/prev/run.webp', temple: 'img/prev/temple.webp',
+    maze: 'img/prev/maze.webp', pong: 'img/prev/pong.webp', pac: 'img/prev/pac.webp',
+    tet: 'img/prev/tet.webp', jewels: 'img/prev/jewels.webp', run3d: 'img/prev/run3d.webp', maze3d: 'img/prev/maze.webp', pong3d: 'img/prev/pong.webp', pac3d: 'img/prev/pac.webp'
   };
   const box = document.createElement('div');
   box.id = 'tprev';

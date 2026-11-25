@@ -2293,7 +2293,7 @@ function update(){
   if(shake>0)shake*=0.85;
   for(const q of parts){q.x+=q.vx;q.y+=q.vy;q.vy+=0.18;q.life--;} parts=parts.filter(q=>q.life>0);
   for(const t of texts){t.t++;t.y-=0.6;} texts=texts.filter(t=>t.t<50);
-  if(state==='intro'){introMusic(introOn?introT:-1);if(introOn)introT++;return;}
+  if(state==='intro'){introMusic(introOn?introT:-1);if(introOn){introT++;if(introT>=352)endIntro();}return;}
   if(state==='world'){owTick();return;}
   if(state==='menu'||!L)return;
   if(state==='dead'){ P.vy+=0.6; P.y+=P.vy; return; }
@@ -4772,3 +4772,9 @@ document.addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.c
 
 startIntro();
 requestAnimationFrame(frame);
+
+// mobile: world map button while playing story mode
+(()=>{const b=document.getElementById('mapb');if(!b)return;
+  b.onclick=()=>{if(!story||OWM!=='story')return;togglePause(false);openWorld();};
+  setInterval(()=>{const on=story&&OWM==='story'&&(state==='play'||state==='dead');b.classList.toggle('on',on);},250);
+})();
