@@ -1618,7 +1618,11 @@ function openWorld(){
   if(OW.u>maxU)OW.u=maxU;
   OW.cam=owPos(OW.u)[0]-VW/2;
 }
-function startStory(){OWM='story';RUN=false;RUNNODE=null;audioInit();if(!S.story||S.story.at==null)S.story={at:0};storyIdx=Math.min(S.story.at,SEQ.length-1);openWorld();}
+function startStory(){OWM='story';RUN=false;RUNNODE=null;audioInit();if(!S.story||S.story.at==null)S.story={at:0};storyIdx=Math.min(S.story.at,SEQ.length-1);
+  // world chosen on the pick sheet: jump the map cursor to the furthest reachable level of that world
+  if(grp>0&&typeof GROUPS!=='undefined'){const set=GROUPS[grp][1];let best=-1,first=-1;for(let i=0;i<SEQ.length;i++)if(set.includes(SEQ[i].lv)){if(first<0)first=i;if(i<=S.story.at)best=i;}
+    if(best>=0)storyIdx=best;else if(first>=0)setTimeout(()=>toast('🔒 '+GROUPS[grp][0].replace(/^\S+ /,'')+' opens at level '+(first+1)+' on the map'),300);}
+  openWorld();}
 function enterNode(i){if(OWM==='run'){startRunNode(i);return;}RUN=false;story=true;storyIdx=i;lvIdx=SEQ[i].lv;startLevel();}
 function owTick(){
   const o=OW,dir=keys.r-keys.l,maxU=Math.min(SEQ.length-1,owAt());

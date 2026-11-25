@@ -21,3 +21,8 @@
 #pzb{transition:transform .1s,background .2s}
 #pzb:hover{background:rgba(20,40,70,.9)}
 #pzb:active{transform:scale(.92)}
+
+#msg .lgrid{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;margin:12px auto 0;max-width:min(92vw,560px);pointer-events:auto;max-height:46vh;overflow:auto}
+#msg .lgrid button{font:800 13px system-ui;padding:8px 0;border:2px solid transparent;border-radius:8px;background:#fff;color:#1d3a5a;cursor:pointer}
+#msg .lgrid button:disabled{opacity:.45}
+@media (max-width:560px){#msg .lgrid{grid-template-columns:repeat(7,1fr)}}

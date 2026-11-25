@@ -41,3 +41,17 @@ Not done: the remaining 29, 3D page testing (three.js unreachable here).
 - Inkbound added as a playable game (inkbound/): phone layer with a full-screen arena during matches, floating touch pad, pause button, no copy/zoom gestures, Android back pauses, ?stage= link from the gallery.
 - Level gallery for every game (pick a game, then "Level gallery"): screenshot cards, names, stars, locks, world tabs, tap to play. Cross Road 3D and Pong 3D use drawn previews; Tetris, Jewels and Run 3D are endless and show a note.
 - Release: service worker cq-1.0.0 (offline, query-safe navigation), manifest shortcuts and screenshots.
+
+## Final polish (1.0.1)
+- All 7 3D games: loading screen, a clear "can't load the 3D engine" screen with Try again / Store when offline or the download fails, one consistent "‹ Store" button in the safe area, no long-press menus / selection / double-tap zoom, screen kept awake, stray promise errors silenced.
+- All 2D games with levels (Cat Quest, Cat Run stages, Temple Dash, Kitty Maze, Kitty Pong, Kitty Pac): end-of-level messages get a "🗺 Levels" button that opens the level gallery.
+- Store: each card shows progress ("12 / 100 cleared", "★ All cleared" or the level count).
+- Cross Road 2D: one-time "tap or swipe up to hop" hint on the first level.
+- Inkbound: one-time control hint at the first match on a touch screen.
+- Regression sweep: every 2D mode started and driven in portrait and landscape, every gallery opened, Cross Road 2D and Inkbound played, all 3D pages booted with a three.js stand-in: no script errors.
+
+## 1.0.2
+- Level select gallery removed (overlay, 625 level screenshots, the "🗺 Levels" button on end-of-level screens, picture thumbnails in Cross Road 2D's level list). Store progress badges kept (badges.js).
+
+## 1.0.3
+- The 3 world selectors (Classic, Cat Worlds, The River; Bosses when unlocked) are back on the character-pick sheet for Cat Quest and Cat Run. In Cat Run they set the world type; in Cat Quest PLAY opens the story map at your furthest unlocked level in that world.

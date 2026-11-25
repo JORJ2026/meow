@@ -152,6 +152,7 @@ function startLevel(L) {
   $('hlv').textContent = 'Level ' + L + ' / ' + LEVELS; $('hwn').textContent = G.title; updHud();
   const b = $('banner'); b.innerHTML = G.th.n + '<small>Level ' + L + ' · ' + NAMES5[G.j] + '</small>'; b.classList.remove('on'); void b.offsetWidth; b.classList.add('on');   // V34
   fade = 1;                                                                                       // V35
+  if (L === 1 && !SV.coached) { const c = document.createElement('div'); c.id = 'coach'; c.innerHTML = '👆 <b>Tap or swipe up</b> to hop<br><small>swipe sideways to dodge · reach the 🥣 bowl</small>'; document.body.appendChild(c); SV.coached = 1; save(); const kill = () => { c.classList.add('out'); setTimeout(() => c.remove(), 400); removeEventListener('pointerdown', kill); }; setTimeout(() => addEventListener('pointerdown', kill), 300); setTimeout(kill, 6000); }
   paused = false;
 }
 function updHud() { /* V33: HUD pills, hearts and the progress bar to the bowl */
@@ -546,25 +547,6 @@ function drawBowl(x, y) {
   if (!REDUCED) for (let i = 0; i < 3; i++) { const k = ((clock * .8 + i / 3) % 1); ctx.strokeStyle = 'rgba(255,255,255,' + (.6 * (1 - k)) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + (i - 1) * U * .14, b - U * .2 - k * U * .5); ctx.quadraticCurveTo(x + (i - 1) * U * .14 + U * .06, b - U * .3 - k * U * .5, x + (i - 1) * U * .14, b - U * .4 - k * U * .5); ctx.stroke(); }
 }
 
-/* ---------- level gallery thumbnails: a tiny top-down map of every level ---------- */
-function drawThumb(L, cvs) {
-  const lv = genLevel(L), th = lv.th, cw = 10, ch = 6, W = COLS * cw, H = lv.rows * ch;
-  cvs.width = W * 2; cvs.height = H * 2; const c = cvs.getContext('2d'); c.scale(2, 2);
-  lv.lanes.forEach(l => {
-    const y = H - (l.r + 1) * ch;
-    const col = { grass: (l.r & 1) ? th.g1 : th.g2, goal: th.g1, road: th.road, river: th.water, rail: shadeCol(th.road, 18), ice: '#cfeeff', belt: '#4a4f60' }[l.type];
-    c.fillStyle = col; c.fillRect(0, y, W, ch);
-    if (l.type === 'road') { c.fillStyle = 'rgba(255,230,120,.6)'; for (let x = 0; x < W; x += 8) c.fillRect(x, y + ch / 2 - .5, 4, 1); l.objs.forEach(o => { const x = ((o.x % W) + W) % W; c.fillStyle = o.c; c.fillRect(x * cw / 1.6, y + 1, o.w * cw * .8, ch - 2); }); }
-    if (l.type === 'river') l.objs.forEach(o => { c.fillStyle = o.k === 'log' ? '#a06a35' : o.k === 'turtle' ? '#3f9a5c' : '#4fbf5a'; c.fillRect((o.x * cw / 1.4) % W, y + 1, o.w * cw * .7, ch - 2); });
-    if (l.type === 'rail') { c.fillStyle = '#c9ced8'; c.fillRect(0, y + 1.5, W, 1); c.fillRect(0, y + ch - 2.5, W, 1); }
-    if (l.type === 'belt') { c.fillStyle = '#ffd84a'; for (let x = 2; x < W; x += 6) c.fillRect(x, y + 2, 2, 2); }
-    (l.obs || []).forEach(o => { c.fillStyle = th.deco === 'pine' ? '#2f8a5c' : th.deco === 'rock' ? '#2a2a33' : th.deco === 'lolli' ? '#ff5fa8' : '#2f7a3c'; c.beginPath(); c.arc(o.c * cw + cw / 2, y + ch / 2, ch * .42, 0, TAU); c.fill(); });
-    l.fish.forEach(f => { c.fillStyle = '#ffb23a'; c.fillRect(f.c * cw + 3, y + 2, 4, 2); });
-    if (l.type === 'goal') { c.fillStyle = '#ffd84a'; c.beginPath(); c.arc(l.bowl * cw + cw / 2, y + ch / 2, ch * .5, 0, TAU); c.fill(); }
-  });
-  c.fillStyle = '#fff'; c.beginPath(); c.arc(3 * cw + cw / 2, H - ch / 2, ch * .45, 0, TAU); c.fill();
-}
-let thumbIO = null;
 /* ---------- UI: title grid, messages ---------- */
 function buildGrid() {
   const g = $('lgrid'); g.innerHTML = '';
@@ -573,13 +555,10 @@ function buildGrid() {
     if ((L - 1) % 5 === 0) { const w = document.createElement('div'); w.className = 'wl'; w.textContent = TH[(L - 1) / 5].n; g.appendChild(w); }
     const b = document.createElement('button'), ok = L <= SV.at + 1, st = SV.stars[L] || 0;
     b.style.setProperty('--c', TH[Math.floor((L - 1) / 5)].g1 === '#eef7ff' ? '#8fd0f0' : TH[Math.floor((L - 1) / 5)].g1);
-    b.innerHTML = '<canvas class="th" data-l="' + L + '"></canvas><span class="ln">' + (ok ? L : '🔒') + '</span><small>' + (st ? '★'.repeat(st) + '☆'.repeat(3 - st) : '') + '</small>';
+    b.innerHTML = (ok ? L : '🔒') + '<small>' + (st ? '★'.repeat(st) + '☆'.repeat(3 - st) : '') + '</small>';
     b.disabled = !ok; b.setAttribute('aria-label', 'Level ' + L + (ok ? '' : ' locked')); if (L === nextL) b.className = 'next';
     b.onclick = () => startLevel(L); g.appendChild(b);
   }
-  if (thumbIO) thumbIO.disconnect();
-  thumbIO = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && !e.target.dataset.done) { e.target.dataset.done = 1; drawThumb(+e.target.dataset.l, e.target); } }), { root: g, rootMargin: '200px' }) : null;
-  g.querySelectorAll('canvas.th').forEach(c => thumbIO ? thumbIO.observe(c) : drawThumb(+c.dataset.l, c));
   $('bcont').textContent = SV.at >= LEVELS ? '★ All cleared! Replay level 50' : (SV.at ? '▶ Continue · Level ' + nextL : '▶ Play Level 1');
   $('bcont').onclick = () => startLevel(Math.min(LEVELS, nextL));
   $('tsub').textContent = 'Hop the roads, rails and rivers to the bowl · ' + SV.at + '/' + LEVELS + ' cleared · 🐟 ' + SV.fish;

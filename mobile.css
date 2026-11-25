@@ -177,7 +177,7 @@ button.back{width:48px;min-width:48px;padding:0;font-size:30px;line-height:1;bor
 #mdetail .sq.f{background:var(--gold)}
 .sec2{display:flex;gap:8px}
 .sec2 .b{flex:1;font-size:14px;padding:10px 8px}
-body:not([data-game="story"]) #pkintro{display:none}
+body:not([data-game="story"]) .sec2{display:none}
 .codebox{font-size:14px;text-align:center;opacity:.9}
 .codebox summary{cursor:pointer;padding:8px;opacity:.8;font-weight:700;list-style:none;touch-action:manipulation}
 .codebox summary::-webkit-details-marker{display:none}
@@ -379,32 +379,14 @@ body[data-rot="1"] #stage{position:fixed;top:0;left:0;width:100vh;height:100vw;m
 body[data-rot="1"] #deck{display:none}
 body[data-rot="1"] #stage::after{display:none !important}
 
-/* ---------- level gallery ---------- */
-#gal{background:#1d1745;justify-content:flex-start;z-index:40;gap:6px}
-.galhead{display:flex;align-items:center;gap:10px;width:100%;max-width:980px}
-.galhead h1{flex:1;margin:0;font-size:22px;text-align:left}
-#galx{width:48px;min-height:48px;padding:0;font-size:24px}
-#galc{font:800 12px system-ui;opacity:.75;white-space:nowrap}
-#galtabs{display:flex;gap:6px;overflow-x:auto;width:100%;max-width:980px;flex:0 0 auto;padding:2px 0 4px;scrollbar-width:none;touch-action:pan-x}
-#galtabs::-webkit-scrollbar{display:none}
-#galtabs .b{flex:0 0 auto;min-height:40px;padding:6px 12px;font-size:13px}
-#galgrid{width:100%;max-width:980px;flex:1 1 0;min-height:0;overflow-y:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-content:start;grid-auto-rows:max-content;padding:2px 2px 16px;touch-action:pan-y;overscroll-behavior:contain;scrollbar-width:none}
-#galgrid::-webkit-scrollbar{display:none}
-body[data-o="l"] #galgrid{grid-template-columns:repeat(4,minmax(0,1fr))}
-@media (min-width:700px){#galgrid{grid-template-columns:repeat(3,minmax(0,1fr))}body[data-o="l"] #galgrid{grid-template-columns:repeat(5,minmax(0,1fr))}}
-.galgrp{grid-column:1/-1;font:900 12px system-ui;letter-spacing:.8px;text-transform:uppercase;color:var(--gold);margin-top:6px;scroll-margin-top:6px}
-.galcard{display:flex;flex-direction:column;padding:0;border-radius:14px;overflow:hidden;border:2px solid rgba(255,255,255,.18);background:#2a2260;color:#fff;text-align:left;cursor:pointer;touch-action:manipulation;flex:0 0 auto;min-height:0;height:auto}
-.galcard:active{transform:scale(.97)}
-.galimg{position:relative;width:100%;aspect-ratio:240/134;flex:0 0 auto;background:#140f38;overflow:hidden}
-.galcard.tall .galimg{aspect-ratio:240/134}
-.galimg img,.galimg canvas{display:block;width:100%;height:100%;object-fit:cover}
-.galcard.tall .galimg img{object-position:50% 100%}
-.galcard.lock .galimg img,.galcard.lock .galimg canvas{filter:grayscale(.7) brightness(.55)}
-.galk{position:absolute;inset:0;display:grid;place-items:center;font-size:28px}
-.galtx{display:flex;align-items:center;gap:6px;padding:7px 9px;min-height:40px;flex-wrap:wrap}
-.galtx b{background:var(--gold);color:var(--ink);border-radius:8px;padding:2px 6px;font:900 12px system-ui}
-.galtx span{flex:1;font:800 12px/1.2 system-ui;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.galtx i{font-style:normal;color:var(--gold);font-size:11px;letter-spacing:1px}
-.galtx i.galsub{color:#cfc6ff;letter-spacing:0;width:100%}
-.galnote{grid-column:1/-1;text-align:center;font:700 15px/1.4 system-ui;padding:30px 10px;opacity:.9}
-.galnote.small{padding:4px;font-size:12px;opacity:.75}
+.sprog{position:absolute;right:8px;bottom:8px;background:rgba(18,10,52,.8);color:#fff;font:900 11px/1 system-ui;padding:5px 8px;border-radius:9px;border:1px solid rgba(255,255,255,.3)}
+
+/* world chooser on the pick sheet (Cat Quest + Cat Run) */
+#pkworld{display:none;width:100%}
+body[data-game="story"] #pkworld,body[data-game="run"] #pkworld{display:block}
+#pkworld .mhead{margin:0 0 6px}
+#lgroups{display:flex;gap:8px;flex-wrap:wrap}
+#lgroups .b{flex:1 1 0;min-width:0;min-height:48px;padding:8px 6px;font-size:14px;white-space:nowrap}
+#lgroups .b.on{background:var(--gold);color:var(--ink);border-color:#fff3d0}
+body.locked #lgroups .b:nth-child(4){display:none}
+body[data-o="l"] #pkworld{margin-bottom:8px}
