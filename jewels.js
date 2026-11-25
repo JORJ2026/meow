@@ -401,3 +401,98 @@ const vg=document.createElement('div');vg.id='vig';document.body.prepend(vg);
 // 20. flash on big combo banner
 const _say=say;
 say=function(t,col){_say(t,col);if(/PURR|COMBO/.test(t)){vg.classList.remove('go');void vg.offsetWidth;vg.classList.add('go');}};
+
+/* ===== background pass 2: 20 more sky / scenery upgrades (visual only, wrapped so it can never break the game) ===== */
+try{(function(){
+const bgG=new THREE.Group();scene.add(bgG);              // 12. everything below sits in one group that parallaxes with the camera
+const hexes=a=>new THREE.Color(a);
+// 1. richer five-stop night sky
+scene.background=gradTex([[0,'#3d2096'],[.28,'#2a1478'],[.55,'#1a0c4c'],[.82,'#110830'],[1,'#06031a']]);
+// 2. far dim star layer (small, blue-white)
+const s2=new Float32Array(300*3);for(let i=0;i<300;i++){s2[i*3]=rnd(-55,55);s2[i*3+1]=rnd(-16,34);s2[i*3+2]=rnd(-55,-30);}
+const s2m=new THREE.PointsMaterial({color:'#bcd2ff',size:.11,transparent:true,opacity:.65,depthWrite:false,fog:false});bgG.add(new THREE.Points(pts(s2),s2m));
+// 3. coloured star layer (pink / gold)
+const s3=new Float32Array(60*3);for(let i=0;i<60;i++){s3[i*3]=rnd(-40,40);s3[i*3+1]=rnd(-10,28);s3[i*3+2]=rnd(-42,-24);}
+const s3m=new THREE.PointsMaterial({color:'#ffc8e8',size:.26,map:GLOW,transparent:true,opacity:.8,depthWrite:false,blending:THREE.AdditiveBlending,fog:false});bgG.add(new THREE.Points(pts(s3),s3m));
+// 4. nebula clouds
+const neb=[];[['#ff4fa3',-14,3],['#4fd1ff',13,-2],['#8a5cff',0,9],['#ff9d4f',-6,-8],['#4fffc4',9,10]].forEach(([c,x,y],i)=>{const s=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:c,transparent:true,opacity:.13,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));s.position.set(x,y,-36-i);s.scale.setScalar(24+i*3);bgG.add(s);neb.push(s);});
+// 5. ringed planet
+const planet=new THREE.Group();
+planet.add(new THREE.Mesh(new THREE.SphereGeometry(2.1,36,28),new THREE.MeshStandardMaterial({color:'#7a63e8',emissive:'#2b1a7a',emissiveIntensity:.5,roughness:.9,fog:false})));
+const ringM=new THREE.Mesh(new THREE.RingGeometry(3,4.6,72),new THREE.MeshBasicMaterial({color:'#e7c9ff',transparent:true,opacity:.5,side:THREE.DoubleSide,depthWrite:false,fog:false}));ringM.rotation.x=-1.25;planet.add(ringM);
+planet.rotation.z=.35;planet.position.set(-14,-4.5,-30);bgG.add(planet);
+// 6. three layered ridge silhouettes
+[['#1d1053',-9.2,-17,1.1],['#150b3c',-10.6,-21,1.7],['#0f0829',-12,-25,2.4]].forEach(([col,base,z,amp],i)=>{const sh=new THREE.Shape();sh.moveTo(-50,-22);for(let x=-50;x<=50;x+=2){sh.lineTo(x,base+Math.sin(x*.28+i*2)*amp+Math.sin(x*.09+i)*amp*1.4);}sh.lineTo(50,-22);const m=new THREE.Mesh(new THREE.ShapeGeometry(sh),new THREE.MeshBasicMaterial({color:col,fog:false}));m.position.z=z;bgG.add(m);});
+// 7. horizon glow behind the ridges
+const hz=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:'#ff7ac8',transparent:true,opacity:.28,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));hz.position.set(0,-8.5,-27);hz.scale.set(70,12,1);bgG.add(hz);
+// 8. rising paper lanterns
+const lan=[];for(let i=0;i<9;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:i%2?'#ffb36b':'#ff8fa8',transparent:true,opacity:.75,blending:THREE.AdditiveBlending,depthWrite:false}));s.scale.setScalar(.55);s.position.set(rnd(-12,12),rnd(-9,9),rnd(-14,-8));bgG.add(s);lan.push({s,sp:rnd(.25,.5),ph:rnd(0,6)});}
+// 9. fireflies orbiting the board
+const FF=40,ffp=new Float32Array(FF*3),ffs=[];for(let i=0;i<FF;i++){ffs.push({a:rnd(0,6.28),r:rnd(4.5,8),y:rnd(-5,5),sp:rnd(.15,.5),ph:rnd(0,6)});}
+const ffg=pts(ffp);const ffm=new THREE.PointsMaterial({color:'#fff0a8',size:.34,map:GLOW,transparent:true,opacity:.85,depthWrite:false,blending:THREE.AdditiveBlending});scene.add(new THREE.Points(ffg,ffm));
+// 10. drifting petals / snow
+const PT=70,ptp=new Float32Array(PT*3);for(let i=0;i<PT;i++){ptp[i*3]=rnd(-14,14);ptp[i*3+1]=rnd(-10,10);ptp[i*3+2]=rnd(-10,-3);}
+const ptg=pts(ptp);scene.add(new THREE.Points(ptg,new THREE.PointsMaterial({color:'#ffd3ec',size:.12,transparent:true,opacity:.7,depthWrite:false})));
+// 11. four-point sparkle crosses twinkling out of phase
+const spT=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');g.translate(32,32);g.fillStyle='#fff';g.beginPath();for(let k=0;k<4;k++){g.rotate(Math.PI/2);g.moveTo(0,0);g.quadraticCurveTo(3,3,0,30);g.quadraticCurveTo(-3,3,0,0);}g.fill();const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;})();
+const sparks=[];for(let i=0;i<26;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:spT,color:i%3?'#ffffff':'#ffe08a',transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));s.position.set(rnd(-24,24),rnd(-8,16),rnd(-34,-18));bgG.add(s);sparks.push({s,ph:rnd(0,6),sp:rnd(.8,2),sz:rnd(.7,1.6)});}
+// 13. god rays from the moon
+const rays=new THREE.Group();rays.position.copy(moon.position);
+const rayT=gradTex([[0,'rgba(255,230,170,.55)'],[1,'rgba(255,230,170,0)']]);
+for(let i=0;i<5;i++){const m=new THREE.Mesh(new THREE.PlaneGeometry(2.4+i*.4,38),new THREE.MeshBasicMaterial({map:rayT,transparent:true,opacity:.07,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));m.position.y=-19;const h=new THREE.Group();h.add(m);h.rotation.z=(i-2)*.28;rays.add(h);}
+bgG.add(rays);
+// 14. wireframe gems drifting far behind
+const gm=[];for(let i=0;i<8;i++){const m=new THREE.Mesh(new THREE.OctahedronGeometry(rnd(.5,1)),new THREE.MeshBasicMaterial({color:['#ff6fb5','#6fd8ff','#ffd66b','#8fffc4'][i%4],wireframe:true,transparent:true,opacity:.35,fog:false}));m.position.set(rnd(-18,18),rnd(-8,10),rnd(-22,-14));bgG.add(m);gm.push({m,sp:rnd(.2,.6)});}
+// 15. constellation lines that fade in and out
+const cpts=[[-16,8],[-13,10],[-10,8.4],[-8,10.6],[-5,9]].map(([x,y])=>new THREE.Vector3(x,y,-30));
+const cl=new THREE.Line(new THREE.BufferGeometry().setFromPoints(cpts),new THREE.LineBasicMaterial({color:'#bcd2ff',transparent:true,opacity:0,fog:false}));bgG.add(cl);
+// 16. glow pool under the board (pulses on combos)
+const pool=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:'#8f6bff',transparent:true,opacity:.22,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));pool.position.set(0,0,-1.4);pool.scale.setScalar(15);scene.add(pool);
+// 17. full-screen colour wash that follows the combo chain
+const wash=new THREE.Mesh(new THREE.PlaneGeometry(160,100),new THREE.MeshBasicMaterial({color:'#7a3fc4',transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));wash.position.z=-46;bgG.add(wash);
+// 18. slow colour cycle on the ambient light
+const hemi=scene.children.find(o=>o.isHemisphereLight);const cA=hexes('#d9c8ff'),cB=hexes('#bfe9ff'),cC=hexes('#ffd1ee'),tmp=new THREE.Color();
+// 19. comets with a glowing tail
+const comets=[];
+function comet(){const g=new THREE.Group(),n=7;for(let i=0;i<n;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:i?'#9fd8ff':'#ffffff',transparent:true,opacity:(1-i/n)*.8,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));s.scale.setScalar(1.2*(1-i/n)+.2);s.position.set(-i*.9,i*.28,0);g.add(s);}
+ g.position.set(rnd(-22,-8),rnd(6,13),-26);bgG.add(g);comets.push({g,life:0});}
+// 20. moon drifts on a slow arc and turns
+const _amb=ambient;
+let nextComet=6,twT=0;
+ambient=function(dt,t){_amb(dt,t);
+ // 12 parallax
+ bgG.position.x=-Math.sin(yaw)*3.2;bgG.position.y=Math.sin(pitch-.4)*-1.2;
+ // 4 nebula drift
+ neb.forEach((s,i)=>{s.position.x+=Math.sin(t*.05+i)*.004;s.material.opacity=.11+.04*Math.sin(t*.3+i*1.7);});
+ // 5 planet spin
+ planet.rotation.y+=dt*.08;
+ // 8 lanterns
+ lan.forEach(l=>{l.s.position.y+=dt*l.sp;l.s.position.x+=Math.sin(t*.6+l.ph)*dt*.25;if(l.s.position.y>10){l.s.position.y=-10;l.s.position.x=rnd(-12,12);}l.s.material.opacity=.55+.25*Math.sin(t*2+l.ph);});
+ // 9 fireflies
+ for(let i=0;i<FF;i++){const f=ffs[i];f.a+=dt*f.sp;ffp[i*3]=Math.cos(f.a)*f.r;ffp[i*3+1]=f.y+Math.sin(t*.8+f.ph)*1.2;ffp[i*3+2]=Math.sin(f.a)*f.r*.4-2;}
+ ffg.attributes.position.needsUpdate=true;ffm.opacity=.6+.3*Math.sin(t*3);
+ // 10 petals
+ for(let i=0;i<PT;i++){ptp[i*3+1]-=dt*(.4+(i%5)*.08);ptp[i*3]+=Math.sin(t*.7+i)*dt*.3;if(ptp[i*3+1]<-10){ptp[i*3+1]=10;ptp[i*3]=rnd(-14,14);}}
+ ptg.attributes.position.needsUpdate=true;
+ // 11 sparkles
+ sparks.forEach(p=>{const k=Math.max(0,Math.sin(t*p.sp+p.ph));p.s.material.opacity=k*k;p.s.scale.setScalar(p.sz*(.6+k));p.s.material.rotation=t*.2+p.ph;});
+ // 13 rays sway
+ rays.children.forEach((h,i)=>{h.rotation.z=(i-2)*.28+Math.sin(t*.15+i)*.04;h.children[0].material.opacity=.05+.03*Math.sin(t*.4+i*1.3);});
+ // 14 wire gems
+ gm.forEach(g=>{g.m.rotation.x+=dt*g.sp;g.m.rotation.y+=dt*g.sp*1.3;});
+ // 15 constellation
+ cl.material.opacity=Math.max(0,Math.sin(t*.25))*.45;
+ // 16 pool pulse
+ pool.material.opacity=.2+.05*Math.sin(t*1.2)+(comboT>0?.18*Math.min(1,comboT):0);pool.scale.setScalar(15+(comboT>0?1.5:0)*Math.sin(t*6));
+ // 17 wash follows the chain
+ const want=chain>=3?.12:chain>=2?.07:0;wash.material.opacity+=(want-wash.material.opacity)*Math.min(1,dt*3);wash.material.color.set(chain>=3?'#ff4fa3':'#4fd1ff');
+ // 18 ambient colour cycle
+ if(hemi){const k=(Math.sin(t*.07)+1)/2,k2=(Math.sin(t*.043+1)+1)/2;tmp.copy(cA).lerp(cB,k*.5).lerp(cC,k2*.4);hemi.color.copy(tmp);}
+ // 19 comets
+ nextComet-=dt;if(nextComet<=0){comet();nextComet=rnd(8,16);}
+ for(const c of comets){c.life+=dt;c.g.position.x+=dt*5;c.g.position.y-=dt*1.1;c.g.children.forEach((s,i)=>{s.material.opacity=Math.max(0,(1-i/7)*.8*(1-c.life/6));});}
+ for(let i=comets.length-1;i>=0;i--)if(comets[i].life>6){bgG.remove(comets[i].g);comets.splice(i,1);}
+ // 20 moon arc
+ moon.position.y=8+Math.sin(t*.05)*.5;moon.rotation.y+=dt*.04;moonGlow.position.copy(moon.position);rays.position.copy(moon.position);
+};
+})();}catch(err){console.warn('background pass 2 skipped',err);}

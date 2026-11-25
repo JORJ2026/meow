@@ -8,24 +8,30 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Cat Quest">
 <meta name="theme-color" content="#15122e">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Cat Quest: a cat platformer, endless runner and mini-games that play great on your phone.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="format-detection" content="telephone=no">
 <title>Cat Quest</title>
 <link rel="stylesheet" href="mobile.css">
 </head>
 <body data-o="l" data-deck="">
+<noscript><p style="color:#fff;font:700 18px system-ui;padding:24px">Cat Quest needs JavaScript. Please turn it on and reload.</p></noscript>
 
 <div id="app">
   <div id="stage">
-    <canvas id="g" width="800" height="448"></canvas>
+    <canvas id="g" width="800" height="448" role="img" aria-label="Game screen"></canvas>
 
     <!-- in-game buttons -->
     <div id="top">
-      <button id="mute" aria-label="Sound">🔊</button>
+      <button id="mute" aria-label="Sound" title="Sound on/off">🔊</button>
       <button id="fs" aria-label="Fullscreen">⛶</button>
       <button id="mapb" aria-label="World map">🗺</button>
       <button id="home" aria-label="Pause and settings">☰</button>
     </div>
-    <div id="toast"></div>
+    <div id="toast" role="status" aria-live="polite"></div>
   </div>
 
   <!-- thumb deck: built by mobile.js -->
@@ -36,13 +42,13 @@
 </div>
 
 <!-- ===== HOME: pick a game ===== -->
-<div id="store" class="ov">
+<div id="store" role="dialog" aria-modal="true" aria-label="Choose a game" class="ov">
   <header class="ovhead"><h1>🐾 CAT QUEST</h1><p class="sub">Pick a game</p></header>
   <div id="sgrid"></div>
 </div>
 
 <!-- ===== PICK SHEET: choose your pet, then play ===== -->
-<div id="menu" class="ov hide">
+<div id="menu" role="dialog" aria-modal="true" aria-label="Choose your pet" class="ov hide">
   <header class="ovhead sheethead">
     <button class="b back" id="pkback" aria-label="Back">‹</button>
     <h1 id="pkname">Cat Quest</h1>
@@ -61,7 +67,7 @@
       </div>
       <details class="codebox">
         <summary>🔑 Level code</summary>
-        <div class="pwrow"><input id="pw" type="text" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="3" placeholder="000"><button class="b" id="pwgo">Load</button></div>
+        <div class="pwrow"><input id="pw" type="text" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="3" placeholder="000" enterkeyhint="go" aria-label="Level code"><button class="b" id="pwgo">Load</button></div>
       </details>
     </div>
   </section>
@@ -77,7 +83,7 @@
 </div>
 
 <!-- ===== PAUSE / SETTINGS ===== -->
-<div id="pause" class="ov hide">
+<div id="pause" role="dialog" aria-modal="true" aria-label="Pause and settings" class="ov hide">
   <header class="ovhead"><h1>🐾 Paws</h1></header>
   <div id="ptabs"><button class="b" data-t="ph">📱 Touch</button><button class="b" data-t="pad">🎮 Pad</button><button class="b" data-t="kb">⌨️ Keys</button><button class="b gated" data-t="ed">🗺️ Editor</button></div>
   <div id="pbody"></div>
@@ -86,14 +92,14 @@
 </div>
 
 <!-- ===== ENDLESS RUN SETUP ===== -->
-<div id="runsetup" class="ov hide">
+<div id="runsetup" role="dialog" aria-modal="true" aria-label="Endless run setup" class="ov hide">
   <header class="ovhead"><h1>🏃 Endless Run</h1></header>
   <div id="rsbody"></div>
-  <div class="actrow"><button class="b big go" id="rsgo">▶ GO!</button><button class="b" id="rsmap">🗺 Run map</button><button class="b" id="rsback">Back</button></div>
+  <div class="actrow"><button class="b big go" id="rsgo">▶ GO!</button><button class="b" id="rsstages">🏁 50 Stages</button><button class="b" id="rsmap">🗺 Run map</button><button class="b" id="rsback">Back</button></div>
 </div>
 
 <!-- ===== MAP PICKER (temple / maze) ===== -->
-<div id="gm" class="ov hide">
+<div id="gm" role="dialog" aria-modal="true" aria-label="Choose a map" class="ov hide">
   <header class="ovhead"><h1 id="gmt"></h1></header>
   <div id="gmtabs"></div>
   <canvas id="gmc" width="800" height="270"></canvas>
@@ -102,7 +108,7 @@
 </div>
 
 <!-- ===== WORLD / LEVEL MENU ===== -->
-<div id="wm" class="ov hide">
+<div id="wm" role="dialog" aria-modal="true" aria-label="Worlds and levels" class="ov hide">
   <header class="ovhead"><h1>🌍 Worlds</h1></header>
   <div id="wmtabs"><button class="b" data-t="story">📖 Story</button><button class="b" data-t="free">🎮 Free play</button></div>
   <div id="wmbody"></div>
@@ -110,7 +116,7 @@
 </div>
 
 <!-- ===== MESSAGE CARD ===== -->
-<div id="msg" class="ov hide">
+<div id="msg" role="dialog" aria-modal="true" aria-label="Message" class="ov hide">
   <div class="card2">
     <h1 id="mt"></h1>
     <p class="sub" id="ms"></p>
@@ -123,5 +129,7 @@
 <script src="game.js"></script>
 <script src="store.js"></script>
 <script src="mobile.js"></script>
+<script src="improve.js"></script>
+<script src="gallery.js"></script>
 </body>
 </html>

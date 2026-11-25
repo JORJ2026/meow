@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#1d1745">
+<title>Cross Road 2D</title>
+<link rel="stylesheet" href="crossroad2d.css">
+</head>
+<body>
+<canvas id="cv" aria-label="Cross Road 2D game board" role="img"></canvas>
+
+<div id="hud" hidden>
+  <div class="hp"><b id="hlv">Level 1</b><small id="hwn"></small></div>
+  <div class="hp mid"><span id="hfish">🐟 0</span><span id="hlives">❤️❤️❤️</span></div>
+  <div class="hbtns"><button id="bmute" aria-label="Sound">🔊</button><button id="bpause" aria-label="Pause">❚❚</button></div>
+  <div id="prog"><i id="progf"></i></div>
+</div>
+
+<div id="banner"></div>
+
+<div id="deck" hidden>
+  <div class="pad" id="pad">
+    <button data-d="u" aria-label="Up">▲</button>
+    <button data-d="l" aria-label="Left">◀</button>
+    <button data-d="d" aria-label="Down">▼</button>
+    <button data-d="r" aria-label="Right">▶</button>
+  </div>
+</div>
+
+<div id="title" class="ov">
+  <header><a class="home" href="index.html" aria-label="Back to store">‹ Store</a><h1>🚗 Cross Road 2D</h1></header>
+  <p class="sub" id="tsub">Hop the roads, rails and rivers to reach the bowl. Swipe or tap to move.</p>
+  <div id="lgrid" role="list"></div>
+  <div class="row"><button class="big" id="bcont">▶ Continue</button></div>
+</div>
+
+<div id="msg" class="ov hide" role="dialog" aria-modal="true"><div class="card"><h2 id="mt"></h2><p id="ms"></p><div id="mstars"></div><div class="row" id="mb"></div></div></div>
+
+<script src="crossroad2d.js"></script>
+</body>
+</html>

@@ -2,7 +2,11 @@ import * as THREE from 'https://esm.sh/three@0.160.0';
 import { makeCat, makeDog, selectedCat } from './char3d.js';
 
 // 3D pong: the cat (you) on the left, the dog on the right. First to 5 wins.
-const HX=10, HZ=6, BR=.36, WIN=5, S0=7, SMAX=17, PL=2.7, CX=-8.9, DX=8.9, LIM=HZ-PL/2, W0=HZ-BR, AIS=7;
+const HX=10, HZ=6, BR=.36, WIN=5, PL=2.7, CX=-8.9, DX=8.9, LIM=HZ-PL/2, W0=HZ-BR;
+// five difficulty levels: the yarn ball serves, caps out and speeds up faster each level; the dog also reacts quicker
+const LVLS=[{n:'Kitten',s0:5,smax:11,g:1.03,a:.15,ai:4.8},{n:'Tabby',s0:6.2,smax:13.5,g:1.05,a:.2,ai:5.8},{n:'Alley Cat',s0:7.5,smax:17,g:1.06,a:.25,ai:7},{n:'Tiger',s0:9.5,smax:21,g:1.07,a:.3,ai:8.6},{n:'Lion',s0:12,smax:26,g:1.08,a:.4,ai:10.5}];
+let LV=2,S0=7.5,SMAX=17,AIS=7,GAIN=1.06,ADD=.25;
+function setLevel(n){LV=Math.max(0,Math.min(4,n));const d=LVLS[LV];S0=d.s0;SMAX=d.smax;AIS=d.ai;GAIN=d.g;ADD=d.a;try{localStorage.setItem('cq_pong3d_lv',String(LV));}catch(_){}}
 const TGT=new THREE.Vector3(0,.6,0);
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -122,7 +126,7 @@ function updHud(){$('cs').textContent=P.cs;$('ds').textContent=P.ds;updPips();}
 
 function hit(plane,dirX,off){
   off=clamp(off,-1,1);
-  const sp=Math.min(SMAX,Math.hypot(P.vx,P.vz)*1.06+.25);
+  const sp=Math.min(SMAX,Math.hypot(P.vx,P.vz)*GAIN+ADD);
   P.vz=clamp(off*sp*.75,-sp*.9,sp*.9);
   P.vx=dirX*Math.sqrt(Math.max(9,sp*sp-P.vz*P.vz));
   P.bx=plane+dirX*BR*1.05;
@@ -165,7 +169,9 @@ function end(){
   P.cheer=2.5;if(win)confetti(120);
   $('ttl').textContent=win?'YOU WIN! 🐾':'DOG WINS 🐶';
   const b=$('btns');b.innerHTML='';
-  const again=document.createElement('button');again.className='on';again.textContent='Rematch';again.onclick=()=>location.reload();b.appendChild(again);
+  if(win&&LV<4){const nx=document.createElement('button');nx.className='on';nx.textContent='Next level \u25b6 '+LVLS[LV+1].n;nx.onclick=()=>{location.href='pong3d.html?lv='+(LV+1);};b.appendChild(nx);}
+  const again=document.createElement('button');again.className=win&&LV<4?'':'on';again.textContent='Rematch';again.onclick=()=>{location.href='pong3d.html?lv='+LV;};b.appendChild(again);
+  const chg=document.createElement('button');chg.textContent='Levels';chg.onclick=()=>{location.href='pong3d.html';};b.appendChild(chg);
   const menu=document.createElement('a');menu.href='index.html';menu.textContent='Menu';b.appendChild(menu);
   $('over').classList.remove('hide');
 }
@@ -279,3 +285,19 @@ function frame(now){
   R.render(scene,cam);
 }
 requestAnimationFrame(frame);
+
+
+/* ===== difficulty picker (5 levels) ===== */
+(function(){
+  const q=new URLSearchParams(location.search).get('lv');
+  let saved=2;try{saved=+localStorage.getItem('cq_pong3d_lv');if(!(saved>=0&&saved<=4))saved=2;}catch(_){}
+  const hud=document.createElement('div');hud.id='lvtag';document.body.appendChild(hud);
+  function begin(n){setLevel(n);hud.textContent='\u{1F3D3} '+LVLS[LV].n+' \u00b7 level '+(LV+1)+'/5';const pk=$('lvpick');if(pk)pk.remove();P.over=null;P.serve=1.1;}
+  if(q!==null&&q!==''&&+q>=0&&+q<=4){begin(+q);return;}
+  P.over='pick';
+  const o=document.createElement('div');o.id='lvpick';
+  o.innerHTML='<div class="lt">Pick a difficulty</div><div class="ls">Higher levels = faster yarn ball and a quicker dog</div>';
+  const row=document.createElement('div');row.className='lr';
+  LVLS.forEach((d,i)=>{const b=document.createElement('button');b.innerHTML='<b>'+(i+1)+'</b><span>'+d.n+'</span><small>speed '+d.s0+'\u2192'+d.smax+'</small>';if(i===saved)b.className='on';b.onclick=()=>begin(i);row.appendChild(b);});
+  o.appendChild(row);document.body.appendChild(o);
+})();

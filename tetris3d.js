@@ -48,8 +48,10 @@ Object.assign(sun.shadow.camera,{left:-12,right:12,top:14,bottom:-14,near:1,far:
 const rim=new THREE.DirectionalLight('#ff8fd6',.6);rim.position.set(6,-3,-6);scene.add(rim);
 // characters standing beside the well: your selected cat (left) and the spray dog (right)
 const CH={cat:makeCat(selectedCat()),dog:makeDog(),hop:9,spray:0};
-CH.cat.position.set(-COLS/2-1.5,-ROWS/2,0);CH.cat.rotation.y=Math.PI;scene.add(CH.cat);
-CH.dog.position.set(COLS/2+1.5,-ROWS/2,0);CH.dog.rotation.y=Math.PI;scene.add(CH.dog);
+const CHY=ROWS/2-1.7;CH.cat.position.set(-COLS/2-1.5,CHY,0);CH.cat.rotation.y=Math.PI;scene.add(CH.cat);
+CH.dog.position.set(COLS/2+1.5,CHY,0);CH.dog.rotation.y=Math.PI;scene.add(CH.dog);
+// little ledges so the pair stands level with the top row
+for(const sx of [-1,1]){const ld=new THREE.Mesh(new THREE.BoxGeometry(1.7,.22,1.1),new THREE.MeshStandardMaterial({color:'#4a3a8c',roughness:.6}));ld.position.set(sx*(COLS/2+1.5),CHY-.12,0);ld.receiveShadow=true;scene.add(ld);}
 const SPRAY_GEO=new THREE.SphereGeometry(.07,8,6),SPRAY_MAT=new THREE.MeshBasicMaterial({color:'#9ff7ff',transparent:true,opacity:.85});
 function spritz(n){for(let i=0;i<n;i++){const m=new THREE.Mesh(SPRAY_GEO,SPRAY_MAT);const b=CH.dog.userData.bottle;b.getWorldPosition(m.position);scene.add(m);parts.push({m,v:new THREE.Vector3(rnd(-4,-2.2),rnd(-.2,1.6),rnd(-.3,.3)),life:0,max:rnd(.45,.7)});}}
 
@@ -260,7 +262,7 @@ function frame(now){
   cam.lookAt(0,0,0);
   $('sc').textContent='🐾 '+score;$('ln').textContent='LINES '+lines;$('lv').textContent='LV '+level;$('bs').textContent='BEST '+best;
   drawMini($('nx'),queue[0]);drawMini($('hd'),hold);
-  CH.hop+=dt;const hk=CH.hop/.5;CH.cat.position.y=-ROWS/2+(hk<1?Math.sin(hk*Math.PI)*.7:0);CH.cat.userData.tail.rotation.y=Math.sin(now*.006)*.5;
+  CH.hop+=dt;const hk=CH.hop/.5;CH.cat.position.y=CHY+(hk<1?Math.sin(hk*Math.PI)*.7:0);CH.cat.userData.tail.rotation.y=Math.sin(now*.006)*.5;
   CH.spray=Math.max(0,CH.spray-dt);
   CH.dog.userData.bottle.rotation.z=CH.spray>0?-.9+Math.sin(now*.03)*.12:0;
   if(CH.spray>0&&Math.random()<.85)spritz(2);

@@ -36,6 +36,8 @@
     }
     return '';
   }
+  const ROTS = new Set(['intro', 'cut']);   // title / intro / story films always play landscape, even on a portrait phone
+  const wantRot = () => window.innerHeight > window.innerWidth * 1.02 && ROTS.has(state);
   const fitMode = () => (FIX800.has(state) ? '800' : 'fill');
 
   /* ---------- sizing ---------- */
@@ -48,8 +50,8 @@
     }
   }
   function fit() {
-    const r = stage.getBoundingClientRect();
-    const sw = Math.max(1, r.width), sh = Math.max(1, r.height);
+    const r = stage.getBoundingClientRect(), rot = body.dataset.rot === '1';
+    const sw = Math.max(1, rot ? stage.offsetWidth : r.width), sh = Math.max(1, rot ? stage.offsetHeight : r.height);
     const fix = fitMode() === '800';
     let vw = 800;
     if (!fix) vw = Math.max(360, Math.min(1100, Math.round(VH_ * sw / sh)));
@@ -66,13 +68,16 @@
     const o = H > W * 1.02 ? 'p' : 'l';
     const ui = uiMode(), prof = deckProfile(ui);
     const sprOK = state === 'play' && !RUN ? '1' : '0';
-    const key = [o, ui, prof, fitMode(), W, H, perfK, sprOK, state === 'play' ? 1 : 0].join('|');
+    const rotNow = wantRot() ? '1' : '0';
+    const key = [o, ui, prof, fitMode(), W, H, perfK, sprOK, state === 'play' ? 1 : 0, rotNow].join('|');
     if (key === sizeKey && !force) return;
     if (body.dataset.deck !== prof) releaseAll();
     sizeKey = key;
+    body.dataset.rot = rotNow;
     body.dataset.o = o; body.dataset.ui = ui; body.dataset.deck = prof; body.dataset.spr = sprOK;
     const room = W - 32 - (parseFloat(getComputedStyle(body).getPropertyValue('--sal')) || 0);
     document.documentElement.style.setProperty('--fit', Math.max(.7, Math.min(1, (W - 40) / 372)).toFixed(3));
+    document.documentElement.style.setProperty('--side', Math.max(118, Math.min(168, Math.round(W * 0.17))) + 'px');
     fit();
     labels();
   }
@@ -87,7 +92,7 @@
   const mv = $('mv'), acts = $('acts');
   mv.innerHTML =
     '<div class="mvs"><i data-d="l">◀</i><i data-d="r">▶</i></div>' +
-    '<div class="mvd"><i data-d="u">▲</i><i data-d="l">◀</i><i data-d="r">▶</i><i data-d="d">▼</i></div>' +
+    '<div class="mvd"><i data-d="u">▲</i><i data-d="l">◀</i><i data-d="r">▶</i><i data-d="d">▼</i><b class="nub"></b></div>' +
     '<div class="mvu"><i data-d="u">▲</i><i data-d="d">▼</i></div>';
   acts.innerHTML =
     '<button class="ab" data-k="s" aria-label="Sprint">SPRINT</button>' +
@@ -141,7 +146,7 @@
   });
 
   // movement zone: slider / d-pad / up-down pill. slide your thumb between directions.
-  let mvPtr = null;
+  let mvPtr = null, org = null, mvDir = null;
   function zoneEl() {
     const p = body.dataset.deck;
     return mv.querySelector(p === 'dpad' ? '.mvd' : p === 'pong' ? '.mvu' : '.mvs');
@@ -151,8 +156,22 @@
     const r = el.getBoundingClientRect(), p = body.dataset.deck;
     let d = null;
     if (p === 'dpad') {
-      const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-      if (Math.hypot(dx, dy) > r.width * 0.12) d = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'l' : 'r') : (dy < 0 ? 'u' : 'd');
+      // floating joystick: the origin follows the thumb, so you never have to drag back to the centre.
+      const R = r.width * 0.30, cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      if (!org) org = { x: e.clientX, y: e.clientY };
+      let dx = e.clientX - org.x, dy = e.clientY - org.y, m = Math.hypot(dx, dy);
+      if (m > R) { org.x += dx / m * (m - R); org.y += dy / m * (m - R); dx = e.clientX - org.x; dy = e.clientY - org.y; m = Math.hypot(dx, dy); }
+      if (m > r.width * 0.07) {
+        const ax = Math.abs(dx), ay = Math.abs(dy), cur = mvDir;
+        const horiz = cur === 'l' || cur === 'r';
+        // hysteresis: keep the current axis unless the other one clearly wins (no flicker on diagonals)
+        const useH = cur ? (horiz ? ay < ax * 1.35 : ax > ay * 1.35) : ax >= ay;
+        d = useH ? (dx < 0 ? 'l' : 'r') : (dy < 0 ? 'u' : 'd');
+      }
+      const nub = el.querySelector('.nub');
+      if (nub) { const nx = Math.max(-1, Math.min(1, (e.clientX - cx) / (r.width * 0.34))), ny = Math.max(-1, Math.min(1, (e.clientY - cy) / (r.height * 0.34)));
+        const k = Math.hypot(nx, ny) > 1 ? 1 / Math.hypot(nx, ny) : 1; nub.style.transform = 'translate(' + (nx * k * 54) + 'px,' + (ny * k * 54) + 'px)'; }
+      if (d !== mvDir) { mvDir = d; if (d && navigator.vibrate) { try { navigator.vibrate(6); } catch (_) {} } }
     } else if (p === 'pong') {
       const y = (e.clientY - r.top) / r.height; d = y < 0.5 ? 'u' : 'd';
     } else {
@@ -164,7 +183,7 @@
   mv.addEventListener('pointerdown', e => {
     if (mvPtr !== null || paused) return;
     e.preventDefault(); audioInit();
-    mvPtr = e.pointerId;
+    mvPtr = e.pointerId; org = null; mvDir = null;
     try { mv.setPointerCapture(e.pointerId); } catch (_) {}
     if (typeof PG !== 'undefined' && PG) PG.tgt = null;
     mvUpdate(e);
@@ -172,7 +191,8 @@
   mv.addEventListener('pointermove', e => { if (e.pointerId === mvPtr) mvUpdate(e); });
   const mvEnd = e => {
     if (e.pointerId !== mvPtr) return;
-    mvPtr = null;
+    mvPtr = null; org = null; mvDir = null;
+    const nb = mv.querySelector('.nub'); if (nb) nb.style.transform = '';
     set('l', 0); set('r', 0); set('j', 0); set('a', 0);
     mv.querySelectorAll('i.on').forEach(i => i.classList.remove('on'));
   };
@@ -212,6 +232,7 @@
 
   // character-switch button lives in the deck so it never covers the picture
   const swc = $('swc'); if (swc) $('deck').appendChild(swc);
+  window.cqSetPerf = k => { if (k !== perfK) { perfK = k; relayout(); } };
   // pick-sheet shortcuts
   $('pklevels').onclick = () => $('wmbtn').click();
   $('pkintro').onclick = () => $('intro').click();

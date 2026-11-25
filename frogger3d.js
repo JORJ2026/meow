@@ -3,8 +3,24 @@ import { selectedCat } from './char3d.js';
 import { makeCatRoad } from './cat3d-road.js';
 
 // 3D Cross Road: hop the cat over busy roads and a river to the bowl. 1 world unit = 1 tile.
-const LEVELS=5, COLS=6, WRAP=11;   // lanes run x -COLS..COLS; moving things wrap at +-WRAP
+const LEVELS=55, COLS=6, WRAP=11;   // lanes run x -COLS..COLS; moving things wrap at +-WRAP
 const CARC=['#ff5d5d','#ffd84a','#5dd0ff','#b07cff','#ff9f43','#f4f4f4'];
+// ---------- 50 themed levels (6..55): ten themes x five levels ----------
+const THEMES=[
+ {n:'Desert Dash',sky:'#ffd9a0',sun:'#fff0c0',hemi:'#ffe9c0',road:'#7a6a55',grass:'#e6c27a',grass2:'#dcb46a',water:'#2fb6c9',cars:['#e07a3f','#f2c14e','#c1440e','#f4f4f4'],log:'#b9895b',tree:'cactus',tint:'rgba(255,190,90,.10)'},
+ {n:'Frosty Pass',sky:'#d6f0ff',sun:'#eaf6ff',hemi:'#e6f4ff',road:'#6b7a8c',grass:'#f4fbff',grass2:'#e3f2fb',water:'#a8e0ff',cars:['#5da8ff','#ffffff','#7fd6ff','#ff5d5d'],log:'#c9d6e0',tree:'pine',tint:'rgba(160,210,255,.12)',snow:1},
+ {n:'Candy Lane',sky:'#ffd1ea',sun:'#fff0f8',hemi:'#ffe6f4',road:'#8a5a8f',grass:'#ffb3d9',grass2:'#ffa3cf',water:'#ff9be0',cars:['#ff7eb6','#8ff0d0','#fff176','#b388ff'],log:'#7a4a2b',tree:'lolli',tint:'rgba(255,140,200,.10)'},
+ {n:'Lava Land',sky:'#3a1a1a',sun:'#ffb070',hemi:'#ff9a70',road:'#2b2b33',grass:'#5a3a3a',grass2:'#4e3232',water:'#ff5a1f',em:'#ff3300',cars:['#ff4d2e','#444450','#ffb347','#1d1d24'],log:'#2e2e34',tree:'rock',tint:'rgba(255,80,30,.14)'},
+ {n:'Spooky Night',sky:'#1c1740',sun:'#b8a8ff',hemi:'#8f86d8',road:'#2a2a3a',grass:'#3b4a3b',grass2:'#344234',water:'#3b2a6a',cars:['#ff9f43','#b07cff','#6b6b7a','#7cffb0'],log:'#4a3a2a',tree:'dead',tint:'rgba(120,80,255,.16)'},
+ {n:'Jungle Run',sky:'#a8f0b8',sun:'#f4ffd8',hemi:'#d8ffd8',road:'#5b4a2f',grass:'#4fae4f',grass2:'#45a245',water:'#3aa07a',cars:['#ffd84a','#ff7a3a','#f4f4f4','#3ab0ff'],log:'#8a5a2b',tree:'palm',tint:'rgba(80,255,120,.10)'},
+ {n:'Beach Break',sky:'#bff3ff',sun:'#fff6d8',hemi:'#f4ffff',road:'#9a8b73',grass:'#f5e2a8',grass2:'#efd896',water:'#27c4e8',cars:['#ff6b6b','#ffd84a','#5dd0ff','#ffffff'],log:'#c99a5a',tree:'umbrella',tint:'rgba(255,230,150,.10)'},
+ {n:'Neon City',sky:'#14102e',sun:'#8fd8ff',hemi:'#7a88ff',road:'#101018',grass:'#1f2a4a',grass2:'#1a2440',water:'#1fe0ff',em:'#0a90b0',cars:['#ff2fd2','#2fffe0','#ffe62f','#7a5cff'],log:'#2a2f55',tree:'lamp',tint:'rgba(120,60,255,.16)'},
+ {n:'Toy Town',sky:'#bde0ff',sun:'#ffffff',hemi:'#ffffff',road:'#e0524a',grass:'#9be37a',grass2:'#8dd96d',water:'#4aa8ff',cars:['#ffd84a','#4a7bff','#ffffff','#2fc46a'],log:'#ffb347',tree:'block',tint:'rgba(255,255,255,0)'},
+ {n:'Rainbow Sky',sky:'#ffe6f7',sun:'#fffbe8',hemi:'#fff0ff',road:'#6b6bd0',grass:'#c9a7ff',grass2:'#bd98f7',water:'#7be0c0',cars:['#ff6b6b','#ffd84a','#6bff9a','#6bb7ff','#d46bff'],log:'#ffffff',tree:'star',tint:'rgba(255,160,255,.10)'}
+];
+const themeOf=L=>L<=5?null:THEMES[Math.floor((L-6)/5)%THEMES.length];
+const themeName=L=>{const t=themeOf(L);return t?t.n+' '+(((L-6)%5)+1):'Meadow '+L;};
+let CUR=null;
 const $=id=>document.getElementById(id);
 const PR=(()=>{try{return JSON.parse(localStorage.getItem('cq_prog')||'{}')||{};}catch(_){return {};}})();
 PR.frog=PR.frog||{at:0};
@@ -125,14 +141,25 @@ const VEH=[
 function mkVehicle(w,c){const g=new THREE.Group();const k=Math.random()*VEH.length|0;VEH[k](g,w,c);if(k===2||k===9)g.userData.low=1;return g;} // low shapes: no roof cargo
 function mkLog(w){
   const g=new THREE.Group();
-  const b=new THREE.Mesh(new THREE.CylinderGeometry(.36,.36,w,14),mat('#a86b35'));
+  const b=new THREE.Mesh(new THREE.CylinderGeometry(.36,.36,w,14),mat(CUR?CUR.log:'#a86b35'));
   b.rotation.z=Math.PI/2;b.position.y=.08;g.add(b);
   return g;
 }
 function addTree(x,z){
-  const g=new THREE.Group();
-  const t=box(.2,.4,.2,'#8a5a2b');t.position.y=.2;g.add(t);
-  const c=new THREE.Mesh(new THREE.ConeGeometry(.45,1.1,7),mat('#2f8a3c'));c.position.y=.9;g.add(c);
+  const g=new THREE.Group(),k=CUR?CUR.tree:'';
+  const part=(geo,c,y,o)=>{const m=new THREE.Mesh(geo,mat(c,o));m.position.y=y;g.add(m);return m;};
+  if(k==='cactus'){part(new THREE.CylinderGeometry(.13,.15,.9,8),'#3f9a4a',.45);const a=part(new THREE.BoxGeometry(.5,.12,.12),'#3f9a4a',.6);a.position.x=.18;}
+  else if(k==='pine'){part(new THREE.BoxGeometry(.2,.4,.2),'#6b4a2b',.2);part(new THREE.ConeGeometry(.45,1.1,7),'#e8f6ff',.9);}
+  else if(k==='lolli'){part(new THREE.CylinderGeometry(.05,.05,.8,6),'#ffffff',.4);part(new THREE.SphereGeometry(.38,12,8),'#ff5fa8',1);}
+  else if(k==='rock'){part(new THREE.DodecahedronGeometry(.4),'#3a3a44',.35);part(new THREE.DodecahedronGeometry(.22),'#ff6a2a',.8,{emissive:'#ff3300',emissiveIntensity:.8});}
+  else if(k==='dead'){part(new THREE.CylinderGeometry(.07,.14,1,6),'#4a3a30',.5);part(new THREE.ConeGeometry(.28,.5,5),'#2a2230',1.15);}
+  else if(k==='palm'){part(new THREE.CylinderGeometry(.08,.12,1.1,6),'#8a5a2b',.55);part(new THREE.SphereGeometry(.45,8,6),'#2fa84f',1.2).scale.y=.45;}
+  else if(k==='umbrella'){part(new THREE.CylinderGeometry(.03,.03,1,5),'#ffffff',.5);part(new THREE.ConeGeometry(.55,.3,8),'#ff6b6b',1.05);}
+  else if(k==='lamp'){part(new THREE.CylinderGeometry(.04,.06,1.2,6),'#2a2f55',.6);part(new THREE.SphereGeometry(.2,10,8),'#2fffe0',1.3,{emissive:'#2fffe0',emissiveIntensity:1});}
+  else if(k==='block'){part(new THREE.BoxGeometry(.5,.5,.5),'#ff6b6b',.25);part(new THREE.BoxGeometry(.36,.36,.36),'#4a7bff',.68);}
+  else if(k==='star'){part(new THREE.CylinderGeometry(.04,.04,.8,5),'#ffffff',.4);part(new THREE.OctahedronGeometry(.34),'#ffd84a',1,{emissive:'#ffb000',emissiveIntensity:.5});}
+  else{const t=box(.2,.4,.2,'#8a5a2b');t.position.y=.2;g.add(t);
+    const c=new THREE.Mesh(new THREE.ConeGeometry(.45,1.1,7),mat('#2f8a3c'));c.position.y=.9;g.add(c);}
   g.position.set(x,0,z);addM(g);
 }
 
@@ -140,18 +167,19 @@ function addTree(x,z){
 function buildLevel(L){
   for(const m of Z.meshes)scene.remove(m);
   Z.meshes=[];Z.rows=[];
-  const N=9+L*2;
+  CUR=themeOf(L);
+  const N=L<=5?9+L*2:Math.min(26,19+Math.floor((L-6)/6)),LE=L<=5?L:5+(L-5)*.13;
   for(let r=0;r<N;r++){
     let type='grass';
     if(r>=2&&r<=N-3){const q=Math.random();type=q<.45?'road':q<.75?'river':'grass';}
     const row={r,type,dir:Math.random()<.5?1:-1,speed:0,objs:[],water:null};
-    if(type==='road')row.speed=(1.1+.45*L)*(.75+Math.random()*.6);
-    if(type==='river')row.speed=(.8+.3*L)*(.75+Math.random()*.5);
+    if(type==='road')row.speed=(1.1+.45*LE)*(.75+Math.random()*.6);
+    if(type==='river')row.speed=(.8+.3*LE)*(.75+Math.random()*.5);
     Z.rows.push(row);
     const z=-r;
     const top=type==='river'
-      ?new THREE.MeshStandardMaterial({color:'#2e8fd0',roughness:.25,metalness:.1})
-      :mat(type==='road'?'#4b5162':(r%2?'#8fd26a':'#7ccb5c'));
+      ?new THREE.MeshStandardMaterial({color:CUR?CUR.water:'#2e8fd0',roughness:.25,metalness:.1,emissive:CUR&&CUR.em?CUR.em:'#000000',emissiveIntensity:CUR&&CUR.em?.7:0})
+      :mat(type==='road'?(CUR?CUR.road:'#4b5162'):(CUR?(r%2?CUR.grass:CUR.grass2):(r%2?'#8fd26a':'#7ccb5c')));
     if(type==='river')row.water=top;
     addM(new THREE.Mesh(new THREE.BoxGeometry(40,.4,.96),top)).position.set(0,-.2,z);
     if(type==='road')for(let x=-20;x<=20;x+=2)addM(box(1,.02,.08,'#f3efd9')).position.set(x,.012,z);
@@ -165,7 +193,7 @@ function buildLevel(L){
       let x=-WRAP+Math.random()*2;
       while(x<=WRAP){
         const w=road?1.5+Math.random()*.7:2.2+Math.random()*1.1;
-        const mesh=road?mkVehicle(w,CARC[(Math.random()*CARC.length)|0]):mkLog(w);
+        const mesh=road?mkVehicle(w,(CUR?CUR.cars:CARC)[(Math.random()*(CUR?CUR.cars:CARC).length)|0]):mkLog(w);
         addM(mesh).position.set(x,0,z);
         row.objs.push({x,w,mesh});
         x+=w+(road?3+Math.random()*2.5:1.4+Math.random()*1.2);
@@ -179,7 +207,7 @@ function startLevel(L){
   Z.level=L;buildLevel(L);
   Z.frog={r:0,c:0,hop:null,fr:1,fc:0};Z.safe={r:0,c:0};Z.maxRow=0;
   Z.queued=null;Z.dead=null;Z.nextT=0;Z.over=null;
-  Z.ready=1.3;showMsg('Level '+L+' / '+LEVELS,'Hop to the bowl \u{1F963}');
+  Z.ready=1.3;showMsg('Level '+L+' / '+LEVELS,(CUR?CUR.n+' \u00b7 ':'')+'Hop to the bowl \u{1F963}');
 }
 function newGame(){Z.score=0;Z.lives=3;startLevel(1);}
 function levelClear(){
@@ -187,7 +215,7 @@ function levelClear(){
   PR.frog.at=Math.max(PR.frog.at||0,Z.level);savePR();
   if(Z.level>=LEVELS){
     Z.over='win';bestSave();
-    showMsg('Crossed them all! \u{1F963}','Score '+Z.score,[['Replay',()=>newGame(),'on'],['Menu',()=>{location.href='index.html';}]]);
+    showMsg('All 55 roads crossed! \u{1F963}','Score '+Z.score,[['Replay',()=>newGame(),'on'],['Menu',()=>{location.href='index.html';}]]);
     return;
   }
   Z.nextT=1.4;showMsg('Bowl reached! \u{1F963}','Level '+Z.level+' cleared');
@@ -290,7 +318,7 @@ function render(){
   const hs=Z.score+'|'+BEST+'|'+Z.level+'|'+Z.lives;
   if(hs!==hudKey){hudKey=hs;
     $('sc').textContent=Z.score;$('best').textContent='best '+Math.max(BEST,Z.score);
-    $('lv').textContent='Level '+Z.level+' / '+LEVELS;$('lives').textContent='\u2764'.repeat(Math.max(0,Z.lives));}
+    $('lv').textContent='Level '+Z.level+' / '+LEVELS+(themeOf(Z.level)?' \u00b7 '+themeName(Z.level):'');$('lives').textContent='\u2764'.repeat(Math.max(0,Z.lives));}
 }
 let last=performance.now();
 function frame(now){
@@ -362,6 +390,8 @@ const PART=[],RINGS=[],POPS=[],STR=[],WHEELS=[],TREES=[],MOTES=[];
 let GOALB=null,shk=0,LA=0,paused=false,pauseT=0,LILY=[],SAFE=null,BLOB=null,LSC=0;
 
 function applyLook(L){
+  const th=themeOf(L);
+  if(th){scene.background.set(th.sky);scene.fog.color.set(th.sky);scene.fog.near=24;scene.fog.far=64;sun.color.set(th.sun);if(hemi)hemi.color.set(th.hemi);return;}
   const i=(L-1)%5;
   scene.background.set(SKY[i]);scene.fog.color.set(SKY[i]);
   scene.fog.near=26-(L-1)*2;scene.fog.far=80-(L-1)*6;
@@ -579,5 +609,25 @@ Z.spawnT=0;
 applyLook(Z.level);decorate();
 })();
 
+// ---------- continue / level picker ----------
+function levelPicker(){
+  const m=$('msg');m.classList.remove('hide');m.innerHTML='';Z.ready=1e9;
+  const t=document.createElement('div');t.textContent='Pick a level';t.style.fontSize='28px';m.appendChild(t);
+  const sm=document.createElement('small');sm.textContent='Cleared '+(PR.frog.at||0)+' / '+LEVELS+' \u00b7 themes unlock as you go';m.appendChild(sm);
+  const gr=document.createElement('div');gr.className='lgrid';
+  for(let L=1;L<=LEVELS;L++){const b=document.createElement('button');const ok=L<=(PR.frog.at||0)+1;b.textContent=ok?L:'\u{1F512}';b.disabled=!ok;
+    const th=themeOf(L);if(th){b.style.borderColor=th.grass;b.title=th.n;}
+    b.onclick=()=>{Z.score=0;Z.lives=3;startLevel(L);};gr.appendChild(b);}
+  m.appendChild(gr);
+  const row=document.createElement('div');row.className='mbtn';const bk=document.createElement('button');bk.textContent='Back';bk.onclick=()=>startScreen();row.appendChild(bk);m.appendChild(row);
+}
+function startScreen(){
+  const at=PR.frog.at||0;if(at<1)return;
+  Z.ready=1e9;showMsg('Cross Road 3D',(at>=LEVELS?'All cleared!':'Next: level '+(at+1)+' \u00b7 '+themeName(at+1)),
+    [['Continue',()=>{Z.score=0;Z.lives=3;startLevel(Math.min(LEVELS,at+1));},'on'],['New game',()=>newGame()],['Levels',levelPicker]]);
+}
+startScreen();
+try{const q=+new URLSearchParams(location.search).get('level');if(q>=1&&q<=LEVELS){Z.score=0;Z.lives=3;startLevel(q);}}catch(_){}
+
 // hook for frogger3d-fx.js (visual round 2)
-window.CR={THREE,scene,cam,R3,Z,frogG,sun};
+window.CR={THREE,scene,cam,R3,Z,frogG,sun,themeOf,themeName};

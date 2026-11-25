@@ -126,7 +126,7 @@ function addZ(o) { scene.add(o); Z.meshes.push(o); return o; }
 let lastRows = null, halo = null, rays = null, goalZ = 0, lastHop = null, bobT = 0;
 function onNewLevel() {
   lastRows = Z.rows;
-  P = PAL[(Z.level - 1) % PAL.length];
+  { const th = window.CR.themeOf && window.CR.themeOf(Z.level); P = th ? { road: th.road, grass: th.grass, water: th.water, tint: th.tint } : PAL[(Z.level - 1) % PAL.length]; }
   tintEl.style.background = P.tint;
 
   // ground strips (40 wide, 0.4 tall) get textured per row type

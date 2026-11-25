@@ -230,3 +230,77 @@ function extras(now){
   requestAnimationFrame(extras);
 }
 requestAnimationFrame(extras);
+
+/* ===== variety pass: per-level palettes, floor patterns, wall heights/tints, themed props, treat shapes, route trail ===== */
+try{(function(){
+const fc=new THREE.Color(),tmp=new THREE.Color();
+const shift=((k*37+w*11)%100)/100;                       // per-level hue/lightness nudge so no two levels look alike
+walls.material.color.set('#ffffff'); // colour now lives in per-instance colours
+scene.background.offsetHSL((shift-.5)*.05,0,0);scene.fog.color.copy(scene.background);
+// route = open cells; start/goal distance gives a gradient along the way
+const dist=(x,y)=>Math.abs(x-1)+Math.abs(y-1),maxD=dist(M.W-2,M.H-2)||1;
+const opn=(x,y)=>x>=0&&y>=0&&x<M.W&&y<M.H&&M.g[y][x]!=='#';
+const room=(x,y)=>opn(x,y)&&opn(x+1,y)&&opn(x-1,y)&&opn(x,y+1)&&opn(x,y-1)&&opn(x+1,y+1)&&opn(x-1,y-1)&&opn(x+1,y-1)&&opn(x-1,y+1);
+const pat=(k+w)%5;
+function floorCol(x,y){
+  const key=x+','+y;
+  if(M.mud.has(key))return fc.set('#7a5234');
+  if(M.conv.get(key))return fc.set('#7fd6ff');
+  fc.set(FLOORS[w]);
+  const d=dist(x,y)/maxD;
+  if(pat===0)fc.offsetHSL(0,0,((x+y)&1)?.05:-.04);                                   // checker
+  else if(pat===1)fc.offsetHSL(0,0,(y&1)?.045:-.03);                                  // stripes
+  else if(pat===2)fc.offsetHSL(((x+2*y)%3-1)*.012,0,((x+2*y)%3-1)*.03);              // diagonal bands
+  else if(pat===3)fc.offsetHSL(.04*Math.sin(x*.9)*Math.cos(y*.9),0,.035*Math.sin(x*.9+y*.9)); // waves
+  else fc.offsetHSL(0,0,(hsh(x*13.1+y*7.7)-.5)*.1);                                   // speckle
+  fc.offsetHSL((d-.5)*.07,0,-.02+d*.03);                                             // slow hue drift from start to far end
+  if(room(x,y))fc.offsetHSL(0,.05,.06);                                              // open rooms are lighter
+  if(Math.abs(x-M.gx)+Math.abs(y-M.gy)<3)fc.lerp(tmp.set('#ffe8a0'),.35);          // golden pool around the goal
+  return fc;
+}
+for(let key=0;key<N;key++){const x=key%M.W,y=(key-x)/M.W;if(M.g[y][x]!=='#')floor.setColorAt(key,floorCol(x,y));}
+if(floor.instanceColor)floor.instanceColor.needsUpdate=true;
+// walls: height + tint variety (outer ring taller), set once when painted
+const baseWall=new THREE.Color(WALLS[w]).offsetHSL((shift-.5)*.07,.02*(k%3),((k%4)-1.5)*.025);
+paint=function(key){const x=key%M.W,y=(key-x)/M.W,isW=M.g[y][x]==='#',on=Z.seen[key]===1;
+  const edge=x===0||y===0||x===M.W-1||y===M.H-1,hh=on&&isW?(edge?1.6:1+hsh(key*1.7)*.55):.01;
+  D.position.set(x+.5,isW&&on?hh*.5:-6,y+.5);D.scale.set(1,hh,1);D.updateMatrix();walls.setMatrixAt(key,D.matrix);
+  if(isW){fc.copy(baseWall).offsetHSL((hsh(key*3.3)-.5)*.035,0,(hsh(key*5.9)-.5)*.1+(edge?-.05:0));walls.setColorAt(key,fc);}
+  D.position.set(x+.5,-.06,y+.5);D.scale.set(1,!isW&&on?1:.01,1);D.updateMatrix();floor.setMatrixAt(key,D.matrix);};
+for(let key=0;key<N;key++)paint(key);
+if(walls.instanceColor)walls.instanceColor.needsUpdate=true;walls.instanceMatrix.needsUpdate=true;floor.instanceMatrix.needsUpdate=true;
+// treat shapes by kind
+const TG=[null,new THREE.SphereGeometry(.17,12,10),new THREE.OctahedronGeometry(.2),new THREE.TorusGeometry(.14,.06,8,14),new THREE.DodecahedronGeometry(.22)];
+M.treats.forEach(q=>{if(TG[q.kind]&&q.mesh){q.mesh.geometry=TG[q.kind];if(q.kind===3)q.mesh.rotation.x=Math.PI/2;}});
+// themed props scattered on free floor, revealed with the fog of war
+const taken=new Set([...M.treats,...M.keys,...M.nips,...M.spikes,...M.doors].map(q=>q.x+','+q.y));
+M.portals.forEach(p=>{taken.add(p.a.join(','));taken.add(p.b.join(','));});taken.add('1,1');taken.add(M.gx+','+M.gy);
+const mt=(c,o)=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.7},o||{}));
+const P=(g,c,y,o)=>{const m=new THREE.Mesh(g,mt(c,o));m.position.y=y;return m;};
+const B=[
+ [()=>{const g=new THREE.Group();g.add(P(new THREE.CylinderGeometry(.02,.02,.3,5),'#3d8a4a',.15));g.add(P(new THREE.SphereGeometry(.1,8,6),'#ff7eb6',.34));return g;},()=>P(new THREE.SphereGeometry(.2,8,6),'#2f7a3c',.12)],
+ [()=>{const g=new THREE.Group();g.add(P(new THREE.CylinderGeometry(.07,.08,.5,6),'#3f9a4a',.25));const a=P(new THREE.BoxGeometry(.28,.06,.06),'#3f9a4a',.3);g.add(a);return g;},()=>P(new THREE.ConeGeometry(.2,.28,4),'#c9a15a',.14)],
+ [()=>P(new THREE.OctahedronGeometry(.2),'#bfe6ff',.25,{emissive:'#7fc8ff',emissiveIntensity:.35}),()=>P(new THREE.SphereGeometry(.16,8,6),'#ffffff',.1)],
+ [()=>P(new THREE.DodecahedronGeometry(.16),'#4a2a22',.14),()=>P(new THREE.SphereGeometry(.08,8,6),'#ff6a2a',.08,{emissive:'#ff3300',emissiveIntensity:.9})],
+ [()=>{const g=new THREE.Group();g.add(P(new THREE.CylinderGeometry(.025,.025,.34,5),'#ffffff',.17));g.add(P(new THREE.SphereGeometry(.13,8,6),'#ff5fa8',.38));return g;},()=>P(new THREE.TorusGeometry(.1,.04,6,10),'#ffd84a',.06)],
+ [()=>{const g=new THREE.Group();g.add(P(new THREE.CylinderGeometry(.04,.05,.2,6),'#f2eede',.1));const c=P(new THREE.SphereGeometry(.14,8,6),'#8fb8ff',.22,{emissive:'#6a8cff',emissiveIntensity:.5});c.scale.y=.6;g.add(c);return g;},()=>P(new THREE.IcosahedronGeometry(.1),'#cfd8ff',.1)],
+ [()=>{const m=P(new THREE.SphereGeometry(.17,10,8),'#ff8a2a',.14);m.scale.y=.75;return m;},()=>P(new THREE.BoxGeometry(.18,.3,.06),'#8a8fa0',.15)],
+ [()=>{const g=new THREE.Group();for(const dx of [-.08,0,.08])g.add(Object.assign(P(new THREE.SphereGeometry(.1,8,6),'#ffffff',.1),{position:new THREE.Vector3(dx,.1,0)}));return g;},()=>P(new THREE.ConeGeometry(.1,.3,5),'#7ad07a',.15)],
+ [()=>P(new THREE.CylinderGeometry(.06,.1,.5,6),'#8fb8ff',.25,{emissive:'#5a7aff',emissiveIntensity:.4}),()=>P(new THREE.SphereGeometry(.12,10,8),'#c08bff',.14)],
+ [()=>{const g=new THREE.Group();for(const a of [-.4,0,.4]){const c=P(new THREE.ConeGeometry(.05,.34,5),'#ff7a6a',.17);c.rotation.z=a;g.add(c);}return g;},()=>P(new THREE.SphereGeometry(.12,8,6),'#ffd2e0',.08)]
+];
+const deco=[];const cells=[];
+for(let y=1;y<M.H-1;y++)for(let x=1;x<M.W-1;x++)if(opn(x,y)&&!taken.has(x+','+y)&&!M.mud.has(x+','+y)&&!M.conv.has(x+','+y))cells.push([x,y]);
+const want=Math.min(cells.length,Math.floor(N/11));
+for(let n=0;n<want;n++){const c=cells.splice(Math.floor(hsh(n*9.1+i*3.7)*cells.length),1)[0];if(!c)break;
+  const mk=B[w][hsh(n*2.3+i)<.5?0:1](),o=(hsh(n*5.1)-.5)*.5,o2=(hsh(n*6.7)-.5)*.5;
+  mk.position.x=c[0]+.5+o;mk.position.z=c[1]+.5+o2;mk.rotation.y=hsh(n*1.9)*6.28;mk.scale.setScalar(.8+hsh(n*4.3)*.7);mk.visible=false;scene.add(mk);deco.push({m:mk,key:c[1]*M.W+c[0]});}
+// route trail: tiles you have walked on pick up a coloured tint that changes per level
+const trail=new THREE.Color().setHSL((shift+.55)%1,.55,.62),seenCell=new Set();let lastCell='';
+function tick(){requestAnimationFrame(tick);
+  for(const d of deco)d.m.visible=Z.seen[d.key]===1;
+  const x=Math.floor(Z.px/TS),y=Math.floor(Z.py/TS),ck=x+','+y;
+  if(ck!==lastCell){lastCell=ck;if(opn(x,y)&&!seenCell.has(ck)&&!M.mud.has(ck)&&!M.conv.get(ck)){seenCell.add(ck);const key=y*M.W+x;floor.getColorAt(key,tmp);tmp.lerp(trail,.4);floor.setColorAt(key,tmp);floor.instanceColor.needsUpdate=true;}}
+}
+requestAnimationFrame(tick);
+})();}catch(err){console.warn('maze variety skipped',err);}

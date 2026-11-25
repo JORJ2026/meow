@@ -31,3 +31,15 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1640;font-family:sy
 @keyframes pop{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
 #btns a,#btns button{transition:transform .12s}
 #btns a:hover,#btns button:hover{transform:translateY(-3px)}
+
+#lvtag{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom));padding:5px 12px;border-radius:999px;background:rgba(10,6,30,.55);color:#fff;font:800 12px system-ui;letter-spacing:.5px;pointer-events:none;z-index:4}
+#lvpick{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(14,8,40,.82);color:#fff;font-family:system-ui,sans-serif;padding:16px;text-align:center}
+#lvpick .lt{font:900 30px system-ui;color:#ffd84a;text-shadow:0 3px 0 #5a3a00}
+#lvpick .ls{font:700 14px system-ui;opacity:.85}
+#lvpick .lr{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:640px;margin-top:8px}
+#lvpick button{width:112px;min-height:96px;border:3px solid #6a5bd6;border-radius:16px;background:#2a2260;color:#fff;font:700 13px system-ui;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;touch-action:manipulation}
+#lvpick button b{font:900 26px system-ui;color:#ffd84a}
+#lvpick button small{opacity:.7;font-size:11px}
+#lvpick button.on{border-color:#ffd84a;background:#3b2f86}
+#over #btns button{font:800 15px system-ui;padding:9px 16px;border:0;border-radius:999px;background:#fff;color:#1d3a5a;margin:0 4px}
+#over #btns button.on{background:#ffd84a}

@@ -1,6 +1,6 @@
 "use strict";
 let VW=800, RK=1; const TS=32, VH=448, ROWS=14;
-const cv=document.getElementById('g'); let ctx=cv.getContext('2d');
+const cv=document.getElementById('g'); let ctx=cv.getContext('2d',{alpha:false});
 
 /* ---------- cats ---------- */
 const CATS=[
@@ -787,7 +787,7 @@ function drawKitchenBG(){
 
 /* ---------- audio ---------- */
 let AC=null, muted=false;
-function audioInit(){ if(!AC){ try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} } if(AC&&AC.state==='suspended'){ try{AC.resume();}catch(e){} } }
+function audioInit(){ if(!AC){ try{AC=new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});}catch(e){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e2){}} } if(AC&&AC.state==='suspended'){ try{AC.resume();}catch(e){} } }
 function tone(f,d,type,vol,slide){
   if(!AC||muted)return;
   try{
@@ -2541,15 +2541,16 @@ function syncSel(){try{localStorage.setItem('cq_sel',String(sel));}catch(_){}try
 syncSel();
 
 /* ---------- loop ---------- */
-let last=performance.now(),acc=0;
+const FE={};let last=performance.now(),acc=0;
 function frame(now){
   acc+=Math.min(50,now-last); last=now;
   pollPad();
   if(paused)acc=0;
-  while(acc>=1000/60){update();acc-=1000/60;}
+  let steps=0;while(acc>=1000/60&&steps<4){update();acc-=1000/60;steps++;}if(steps>=4)acc=0;
   document.body.classList.toggle('mmenu',state==='menu'&&MOB);
-  const cover=state==='menu'&&(!$('store').classList.contains('hide')||!$('menu').classList.contains('hide'));
-  if(state==='menu'&&!$('menu').classList.contains('hide'))drawCards();
+  const _st=FE.store||(FE.store=$('store')),_mn=FE.menu||(FE.menu=$('menu'));
+  const cover=state==='menu'&&(!_st.classList.contains('hide')||!_mn.classList.contains('hide'));
+  if(state==='menu'&&!_mn.classList.contains('hide')&&((window._fc=(window._fc||0)+1)&1)===0)drawCards();
   if(!cover)render();
   requestAnimationFrame(frame);
 }
@@ -2754,13 +2755,16 @@ function startRun(){
   $('menu').classList.add('hide');$('msg').classList.add('hide');
 }
 const RUNW=[ // weights per world type: [pattern id, weight]
- [[1,3],[3,3],[4,3],[5,2],[8,2],[10,1],[6,1],[12,1]],
- [[6,3],[7,3],[12,2],[1,2],[3,2],[10,2],[5,2],[8,1]],
- [[1,3],[2,3],[8,2],[10,2],[3,1],[12,1],[5,1],[4,1]],
- [[5,4],[9,3],[14,3],[10,3],[3,2],[4,1]]
+ [[1,3],[3,3],[4,3],[5,2],[8,2],[10,1],[6,1],[12,1],[15,2],[16,2],[20,1],[21,1]],
+ [[6,3],[7,3],[12,2],[1,2],[3,2],[10,2],[5,2],[8,1],[17,2],[19,2],[18,1],[22,1]],
+ [[1,3],[2,3],[8,2],[10,2],[3,1],[12,1],[5,1],[4,1],[16,2],[18,2],[21,1],[15,1]],
+ [[5,4],[9,3],[14,3],[10,3],[3,2],[4,1],[17,2],[20,2],[22,2],[19,1],[21,1]]
 ];
+// obstacle unlock thresholds (difficulty 0..1): 15 picket fence, 16 crate tower, 17 spike pits, 18 flyer lane, 19 spring tower, 20 enemy alley, 21 broken bridge, 22 double trouble
+const RGATE={9:.3,14:.45,15:.15,16:.25,17:.5,18:.35,19:.4,20:.55,21:.75,22:.65};
+const rgOK=(id,d)=>!(RGATE[id]>d);
 function genChunk(){
-  const R=RS,n=R.n++,xs=L.W;R.lastXs=xs;const dif=Math.min(1,n/40);
+  const R=RS,n=R.n++,xs=L.W;R.lastXs=xs;const dif=R.sd!=null?Math.min(1,R.sd+n/120):Math.min(1,n/40);
   if(!R.q)R.q=[];
   const rnd=k=>hsh(R.seed*0.13+n*7.7+k*3.3);
   // phrase queue: breather -> 2..4 obstacles -> reward
@@ -2768,9 +2772,9 @@ function genChunk(){
     const w=RUNW[R.g],cnt=2+Math.floor(dif*2+rnd(1)*1.6),ids=[0];
     let last=-1;
     for(let i=0;i<cnt;i++){
-      let tot=0;w.forEach(a=>{if(!(a[0]===9&&dif<0.3)&&!(a[0]===14&&dif<0.45)&&a[0]!==last)tot+=a[1];});
+      let tot=0;w.forEach(a=>{if(rgOK(a[0],dif)&&a[0]!==last)tot+=a[1];});
       let r=rnd(10+i)*tot,pick=w[0][0];
-      for(const a of w){if((a[0]===9&&dif<0.3)||(a[0]===14&&dif<0.45)||a[0]===last)continue;r-=a[1];if(r<=0){pick=a[0];break;}}
+      for(const a of w){if(!rgOK(a[0],dif)||a[0]===last)continue;r-=a[1];if(r<=0){pick=a[0];break;}}
       ids.push(pick);last=pick;
     }
     ids.push(11);R.q=ids;
@@ -2816,6 +2820,14 @@ function genChunk(){
     if(n%3!==2){const k=['mag','shield','puff'][Math.floor(rnd(7)*3)];L.pows.push({x:(xs+12)*TS+16,y:8*TS+10,k,got:false,ph:n});}}
   else if(id===12){w=28;spk(8,2);arc(6,10,6,2.2);plat(14,9,7);fish(14,8,7);}
   else if(id===14){w=30;spk(9,2);gE(15);gap(21,2);fE(14,8);arc(7,10,4,2);}
+  else if(id===15){w=26;for(const x of [8,11,14,17])spk(x,1);arc(6,10,5,2.2);arc(10,10,5,2.2);arc(15,10,5,2.2);} // picket fence
+  else if(id===16){w=24;setc(9,11,'b');setc(9,10,'b');if(hard){setc(15,11,'b');setc(15,10,'b');setc(15,9,'b');}fish(7,8,3);fish(13,7,3);} // crate tower
+  else if(id===17){w=32;gap(8,2);spk(13,2);gap(18,2);arc(6,10,5,2.2);arc(11,10,5,2.2);arc(16,10,5,2.2);} // spike pits
+  else if(id===18){w=32;fE(8,9);fE(14,8);fE(20,9);if(hard)fE(26,8);gE(25);fish(6,11,4);} // flyer lane
+  else if(id===19){w=32;setc(7,11,'y');plat(11,5,5);spk(11,5);fish(11,4,5);if(hard){setc(21,11,'y');plat(25,5,4);spk(25,4);fish(25,4,4);}} // spring tower
+  else if(id===20){w=32;gE(8);gE(13);gE(18);if(hard)gE(23);arc(6,10,4,2);arc(15,10,4,2);} // enemy alley
+  else if(id===21){w=30;gap(8,2);gap(12,2);gap(16,2);if(hard)gap(20,2);arc(6,10,4,2.4);arc(10,10,4,2.4);arc(14,10,4,2.4);} // broken bridge
+  else if(id===22){w=34;spk(8,2);gE(13);gap(18,2);spk(23,2);fE(14,8);fish(5,11,3);arc(21,10,4,2.2);} // double trouble
   for(let y=0;y<ROWS;y++)for(let i=0;i<w;i++)L.g[y].push(y>=12?'#':' ');
   L.W+=w;
   rows.forEach(([x,y,c])=>{if(xs+x<L.W)L.g[y][xs+x]=c;});
@@ -2871,18 +2883,21 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('keyup',e=>{if(e.target.classList&&e.target.classList.contains('codein')&&e.key!=='Escape')e.stopPropagation();},true);
 
 /* ---------- turn 9: runner as a full mode ---------- */
-let RC={cat:0,diff:1,bank:0,up:{mag:0,shield:0,heart:0},best:{0:[],1:[],2:[],3:[]}};
+let STGV=false;
+let RC={stg:{at:0,stars:{}},cat:0,diff:1,bank:0,up:{mag:0,shield:0,heart:0},best:{0:[],1:[],2:[],3:[]}};
 try{const o=JSON.parse(localStorage.getItem('catcousins_run2')||'null');if(o){RC=Object.assign(RC,o);RC.up=Object.assign({mag:0,shield:0,heart:0},o.up||{});RC.best=Object.assign({0:[],1:[],2:[],3:[]},o.best||{});}}catch(_){}
+RC.stg=Object.assign({at:0,stars:{}},RC.stg||{});
 function saveRC(){try{localStorage.setItem('catcousins_run2',JSON.stringify(RC));}catch(_){}}
 const DIFFN=['😺 Chill','🐱 Normal','🐯 Zoomies'],DIFFS=[{spd:0.9,en:0.55,chase:0.55,ramp:0.6,sc:0.8},{spd:1,en:1,chase:0.72,ramp:1,sc:1},{spd:1.15,en:1.5,chase:0.86,ramp:1.5,sc:1.5}];
 const UPS={mag:{n:'🧲 Magnet time',d:'Longer fish magnet',max:5,cost:l=>60*(l+1)},shield:{n:'🛡️ Start shield',d:'Begin each run with a shield',max:1,cost:l=>150},heart:{n:'❤️ Extra hearts',d:'+1 heart per level',max:3,cost:l=>100*(l+1)}};
 const MEDALS=[[6000,'💎 Diamond'],[3000,'🥇 Gold'],[1500,'🥈 Silver'],[500,'🥉 Bronze']];
 const POWN={mag:'🧲',shield:'🛡️',puff:'🎈'};
 function runScore(){const df=DIFFS[RC.diff];return Math.floor((runDist()+P.fish*3+(P.bonus||0))*df.sc);}
-function openSetup(){RUNNODE=null;RC.cat=grp;renderSetup();$('runsetup').classList.remove('hide');}
+function openSetup(){RUNNODE=null;RC.cat=grp;STGV=false;renderSetup();$('runsetup').classList.remove('hide');}
 function closeSetup(){$('runsetup').classList.add('hide');}
 function renderSetup(){
   const b=$('rsbody');let h='';
+  if(STGV){b.innerHTML=stagesHTML();return;}
   const chip=(on,a,l)=>'<button class="b'+(on?' on':'')+'" '+a+'>'+l+'</button>';
   h+='<div class="rsrow"><b>World type</b><div>'+RUNNAMES.map((n,i)=>(i===3&&!UNL)?'':chip(RC.cat===i,'data-r="cat" data-v="'+i+'"',n)).join('')+'</div></div>';
   h+='<div class="rsrow"><b>Difficulty</b><div>'+DIFFN.map((n,i)=>chip(RC.diff===i,'data-r="diff" data-v="'+i+'"',n)).join('')+'</div></div>';
@@ -2895,11 +2910,14 @@ function renderSetup(){
 }
 $('rsbody').addEventListener('click',e=>{
   const t=e.target.closest('button[data-r]');if(!t)return;const a=t.dataset.r,v=t.dataset.v;
+  if(a==='stg'){if(+v<=RC.stg.at||UNL){startStage(+v);}return;}
+  if(a==='stgx'){STGV=false;renderSetup();return;}
   if(a==='cat'){RC.cat=+v;grp=+v;setGroup(grp);}
   else if(a==='diff')RC.diff=+v;
   else if(a==='buy'){const u=UPS[v],l=RC.up[v],c=u.cost(l);if(l<u.max&&RC.bank>=c){RC.bank-=c;RC.up[v]++;sfx.check();}}
   saveRC();renderSetup();
 });
+$('rsstages').onclick=()=>{STGV=true;renderSetup();};
 $('rsgo').onclick=()=>{RUNNODE=null;startRun();};$('rsmap').onclick=openRunMap;$('rsback').onclick=closeSetup;
 $('run').onclick=openSetup;
 document.addEventListener('keydown',e=>{
@@ -2911,12 +2929,12 @@ document.addEventListener('keydown',e=>{
 /* override startRun with settings, zones, power-ups */
 function startRun(){
   audioInit();RUN=true;story=false;closeSetup();
-  const nd=RUNNODE,g=RC.cat,df=DIFFS[RC.diff],seed=Math.floor(Math.random()*1e6);
+  const nd=RUNNODE,g=(nd&&nd.g!=null)?nd.g:RC.cat,df=(nd&&nd.df)||DIFFS[RC.diff],seed=Math.floor(Math.random()*1e6);
   if(!nd)grp=g;
   MS=msDef();dogNow=!!CATS[sel].dog;ARENA=false;BS=1;RUNSPD=df.spd;
   const zones=[];if(nd)zones.push({theme:nd.theme,name:nd.name});else for(let i=0;i<5;i++)zones.push(runTheme(g,seed+i*7919));
   L={name:nd?nd.name:RUNNAMES[g],W:0,g:Array.from({length:ROWS},()=>[]),coins:[],enemies:[],tins:[],nips:[],shots:[],pows:[],theme:zones[0].theme,goal:nd?{x:(nd.D+2)*TS,y:11*TS}:null,startX:2,half:0,var:0,note:nd?('Reach '+nd.D+' m!'):'How far can you run?  ·  '+zones[0].name};
-  RS={seed,n:0,last:-1,g,runX:-266,ro:makeRoster(seed*0.001),t:0,df,zones,zone:0,flash:0,mile:0,node:nd,goalX:nd?nd.D+2:0};
+  RS={seed,n:0,last:-1,g,runX:-266,ro:makeRoster(seed*0.001),t:0,df,zones,zone:0,flash:0,mile:0,node:nd,goalX:nd?nd.D+2:0,sd:(nd&&nd.sd!=null)?nd.sd:undefined};
   while(L.W<60)genChunk();
   P=newPlayer(CATS[sel]);
   P.vx=3.2*df.spd;P.face=1;bigMsg={s:'RUN!',t:70};
@@ -2937,7 +2955,7 @@ genChunk=function(){
 const _runTick=runTick;
 runTick=function(){
   const p=P,R=RS;
-  R.df=DIFFS[RC.diff];
+  R.df=(R.node&&R.node.df)||DIFFS[RC.diff];
   _runTick();
   if(state!=='play')return;
   RUNSPD=R.df.spd*(1+Math.min(0.45*R.df.ramp,Math.max(0,(p.x-64)/TS)/900*R.df.ramp));
@@ -3025,6 +3043,7 @@ function openRunMap(){
 function startRunNode(i){RUNNODE=Object.assign({i},nodeInfo(i));storyIdx=i;startRun();}
 function runNodeWin(){
   if(state==='win')return;
+  if(RS.node&&RS.node.stage!=null)return stageWin();
   state='win';sfx.win();const R=RS,nd=R.node,P0=P;
   for(let k=0;k<40;k++)burst(P0.x+P0.w/2,P0.y,['#ffd84a','#ff77b7','#6ee7ff','#9fe870'][k%4],1,6);
   const need=Math.round(nd.D/10),stars=1+(P0.fish>=need?1:0)+(P0.hp>=P0.maxhp?1:0);
@@ -3039,8 +3058,47 @@ function runNodeWin(){
   },900);
 }
 function nodeOver(){
+  if(RS.node&&RS.node.stage!=null)return stageOver();
   const nd=RS.node,d=runDist();RC.bank+=P.fish;saveRC();
   showMsg('Caught! 🐕',nd.name+'\n'+d+' m of '+nd.D+' m  ·  🐟 '+P.fish+'  (+'+P.fish+' 🐟 banked)',[['Try again',()=>startRunNode(nd.i),'on'],['Map',openRunMap]]);
+}
+
+
+/* ---------- 50 progressive run stages ---------- */
+const STG_ADJ=['Sunny','Breezy','Bouncy','Sneaky','Dusty','Frosty','Spooky','Zippy','Rocky','Stormy'];
+const STG_NOUN=['Alley','Rooftops','Bridges','Backyards','Gauntlet'];
+function stageDef(s){
+  const k=s/49,g=s%4,seed=5000+s*131,rt=runTheme(g,seed);
+  return {stage:s,i:1000+s,g,theme:rt.theme,name:'Stage '+(s+1)+' · '+STG_ADJ[s%10]+' '+STG_NOUN[Math.floor(s/10)%5],D:300+24*s,boss:false,w:g,sd:0.05+0.8*k,
+    df:{spd:0.9+0.3*k,en:0.6+0.95*k,chase:0.52+0.36*k,ramp:0.6+0.9*k,sc:1}};
+}
+function startStage(s){RUNNODE=stageDef(s);startRun();}
+function stagesHTML(){
+  const at=Math.min(50,RC.stg.at),tot=Object.values(RC.stg.stars).reduce((a,b)=>a+b,0);
+  let h='<div class="rsrow"><b>🏁 Run Stages</b><div><button class="b" data-r="stgx">‹ Run setup</button></div></div>';
+  h+='<p class="help">'+at+' / 50 cleared · ★ '+tot+' / 150 · stages get longer, faster and meaner; new obstacles join along the way.</p><div class="stgrid">';
+  for(let s=0;s<50;s++){const ok=s<=RC.stg.at||UNL,st=RC.stg.stars[s]||0;
+    h+='<button class="b stgb'+(ok?'':' dim')+(s===RC.stg.at?' on':'')+'" data-r="stg" data-v="'+s+'" aria-label="Stage '+(s+1)+(ok?'':' locked')+'">'+(ok?(s+1):'🔒')+'<small>'+(st?'★'.repeat(st)+'☆'.repeat(3-st):'')+'</small></button>';}
+  return h+'</div>';
+}
+function openStages(){STGV=true;openSetup();STGV=true;renderSetup();$('runsetup').classList.remove('hide');}
+function stageWin(){
+  if(state==='win')return;
+  state='win';sfx.win();const nd=RS.node,P0=P,s=nd.stage;
+  for(let k=0;k<40;k++)burst(P0.x+P0.w/2,P0.y,['#ffd84a','#ff77b7','#6ee7ff','#9fe870'][k%4],1,6);
+  const need=Math.round(nd.D/12),stars=1+(P0.fish>=need?1:0)+(P0.hp>=P0.maxhp?1:0);
+  if(stars>(RC.stg.stars[s]||0))RC.stg.stars[s]=stars;
+  if(s>=RC.stg.at)RC.stg.at=Math.min(50,s+1);
+  RC.bank+=P0.fish;saveRC();
+  setTimeout(()=>{
+    const btns=[];if(s<49)btns.push(['Next stage ▶',()=>startStage(s+1),'on']);
+    btns.push(['Replay',()=>startStage(s)]);btns.push(['Stages',openStages]);
+    showMsg(s>=49?'All 50 stages cleared! 🏆':'Stage clear! 🎉',nd.name+'\n'+'★'.repeat(stars)+'☆'.repeat(3-stars)+'  ·  🐟 '+P0.fish+'/'+need+(P0.hp>=P0.maxhp?'  ·  flawless':'')+'  (+'+P0.fish+' 🐟 banked)',btns);
+  },900);
+}
+function stageOver(){
+  const nd=RS.node,d=runDist();RC.bank+=P.fish;saveRC();
+  showMsg('Caught! 🐕',nd.name+'\n'+d+' m of '+nd.D+' m  ·  🐟 '+P.fish+'  (+'+P.fish+' 🐟 banked)',[['Try again',()=>startStage(nd.stage),'on'],['Stages',openStages]]);
 }
 
 /* ---------- turn 12: level codes ---------- */
@@ -3053,7 +3111,7 @@ const _showMsg=showMsg;
 showMsg=function(t,sub,btns){if(PENDCODE){sub+='\n🔑 Level code: '+PENDCODE;PENDCODE=null;}_showMsg(t,sub,btns);};
 const _win=win;
 win=function(){
-  if(RUN&&RS&&RS.node)PENDCODE=codeFor(1,RS.node.i);
+  if(RUN&&RS&&RS.node&&RS.node.stage==null)PENDCODE=codeFor(1,RS.node.i);
   else if(story&&storyIdx>=0)PENDCODE=codeFor(0,storyIdx);
   _win();
 };
