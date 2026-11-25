@@ -25,7 +25,7 @@ const sky=new THREE.Mesh(new THREE.SphereGeometry(200,24,16),new THREE.ShaderMat
   fragmentShader:'uniform vec3 top;uniform vec3 hor;varying vec3 vp;void main(){float h=clamp(normalize(vp).y*1.8,0.0,1.0);gl_FragColor=vec4(mix(hor,top,pow(h,0.6)),1.0);\n#include <colorspace_fragment>\n}'}));
 sky.frustumCulled=false;scene.add(sky);
 
-function size(){R.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();}
+function size(){R.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.fov=cam.aspect<1?Math.min(88,2*Math.atan(Math.tan(62*Math.PI/360)/cam.aspect*.85)*180/Math.PI):62;cam.updateProjectionMatrix();}
 addEventListener('resize',size);size();
 
 // ---------- lights ----------

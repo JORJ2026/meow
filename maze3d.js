@@ -146,7 +146,7 @@ cvs.addEventListener('pointerup',release);cvs.addEventListener('pointercancel',r
 
 // ---------- camera, sizing, loop ----------
 let camX=Z.px/TS,camZ=Z.py/TS;
-function size(){const W=innerWidth,H=innerHeight;R.setSize(W,H,false);cam.aspect=W/H;cam.updateProjectionMatrix();}
+function size(){const W=innerWidth,H=innerHeight;R.setSize(W,H,false);cam.aspect=W/H;cam.fov=cam.aspect<1?Math.min(88,2*Math.atan(Math.tan(52*Math.PI/360)/cam.aspect*.85)*180/Math.PI):52;cam.updateProjectionMatrix();}
 addEventListener('resize',size);size();
 reveal(1,1);
 const hpEl=$('hp'),trEl=$('tr'),kyEl=$('ky'),scEl=$('sc');

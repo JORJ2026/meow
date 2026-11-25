@@ -2,88 +2,126 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#15122e"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cat Quest">
+<meta name="theme-color" content="#15122e">
+<meta name="format-detection" content="telephone=no">
 <title>Cat Quest</title>
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="tile3d.css">
-<link rel="stylesheet" href="store.css">
-
+<link rel="stylesheet" href="mobile.css">
 </head>
-<body>
-<div id="rot"><span>📱</span>Turn your phone sideways<small style="font-weight:600;opacity:.7">Cat Quest plays in landscape</small></div>
-<div id="stage">
-  <canvas id="g" width="800" height="448"></canvas>
-  <div id="top"><button id="mute" title="Sound (M)" aria-label="Sound">🔊</button><button id="fs" title="Fullscreen" aria-label="Fullscreen">⛶</button><button id="mapb" title="World map" aria-label="World map">🗺</button><button id="home" title="Pause / settings (Esc, Start)">☰</button></div>
-  <div id="toast"></div>
-  
+<body data-o="l" data-deck="">
 
-  <div id="menu" class="ov">
-    <div class="mtop"><h1>🐾 CAT QUEST 🐾</h1><div id="pkbar"><button class="b" id="pkback">‹ Store</button><b id="pkname"></b><button class="b big" id="pkgo">▶ PLAY</button></div></div>
-    <div class="mleft">
-      <div id="lgroups"></div>
-      <p class="help" id="runhint">Pick a world type, then hit the running cat for an endless run.</p>
-      <div id="lvls" class="gated"></div>
-      <div class="prow"><button class="b big gated" id="play">▶ FREE PLAY</button><button class="b big" id="story"><span class="bi">▶</span> <span class="bw"><span class="bt">PLAY</span><span class="bs">story mode</span></span></button><button class="b big" id="run"><canvas id="runicon" width="64" height="44"></canvas><span class="bw"><span class="bt">RUN!!!</span><span class="bs">endless run</span></span></button><button class="b big" id="temple"><span class="bi">🏛</span><span class="bw"><span class="bt">TEMPLE</span><span class="bs">kitty run</span></span></button><button class="b big" id="maze"><span class="bi">🧩</span><span class="bw"><span class="bt">MAZE</span><span class="bs">kitty maze</span></span></button><button class="b big" id="pong"><span class="bi">🏓</span><span class="bw"><span class="bt">PONG</span><span class="bs">kitty pong</span></span></button><button class="b big" id="pac"><span class="bi">🐾</span><span class="bw"><span class="bt">PAC</span><span class="bs">kitty pac</span></span></button><button class="b big" id="tet"><span class="bi">🧱</span><span class="bw"><span class="bt">TETRIS</span><span class="bs">kitty tetris</span></span></button><a class="b big" id="jewels" href="jewels.html"><span class="bi">💎</span><span class="bw"><span class="bt">JEWELS</span><span class="bs">cat match-3</span></span></a><a class="b big" id="run3d" href="runner3d.html"><span class="bi">🏃</span><span class="bw"><span class="bt">RUN 3D</span><span class="bs">temple run</span></span></a><a class="b big" id="maze3d" href="maze3d.html"><span class="bi">🧩</span><span class="bw"><span class="bt">MAZE 3D</span><span class="bs">kitty maze</span></span></a><a class="b big" id="pong3d" href="pong3d.html"><span class="bi">🏓</span><span class="bw"><span class="bt">PONG 3D</span><span class="bs">kitty pong</span></span></a><a class="b big" id="pac3d" href="pac3d.html"><span class="bi">🐾</span><span class="bw"><span class="bt">PAC 3D</span><span class="bs">kitty pac</span></span></a><a class="b big" id="frog3d" href="frogger3d.html"><span class="bi">🚗</span><span class="bw"><span class="bt">CROSS</span><span class="bs">road 3D</span></span></a><button class="b gated" id="intro">🎬 Intro</button><button class="b gated" id="wmbtn">🌍 World Menu</button></div>
+<div id="app">
+  <div id="stage">
+    <canvas id="g" width="800" height="448"></canvas>
+
+    <!-- in-game buttons -->
+    <div id="top">
+      <button id="mute" aria-label="Sound">🔊</button>
+      <button id="fs" aria-label="Fullscreen">⛶</button>
+      <button id="mapb" aria-label="World map">🗺</button>
+      <button id="home" aria-label="Pause and settings">☰</button>
     </div>
-    <div class="mright">
+    <div id="toast"></div>
+  </div>
+
+  <!-- thumb deck: built by mobile.js -->
+  <div id="deck" aria-hidden="true">
+    <div id="mv" class="zone"></div>
+    <div id="acts"></div>
+  </div>
+</div>
+
+<!-- ===== HOME: pick a game ===== -->
+<div id="store" class="ov">
+  <header class="ovhead"><h1>🐾 CAT QUEST</h1><p class="sub">Pick a game</p></header>
+  <div id="sgrid"></div>
+</div>
+
+<!-- ===== PICK SHEET: choose your pet, then play ===== -->
+<div id="menu" class="ov hide">
+  <header class="ovhead sheethead">
+    <button class="b back" id="pkback" aria-label="Back">‹</button>
+    <h1 id="pkname">Cat Quest</h1>
+  </header>
+  <section class="sheetbody">
+    <div class="petcol">
       <p class="mhead">Choose your pet</p>
-      <p class="sub">pick your character</p>
       <div id="cards"></div>
       <div id="mdetail"></div>
     </div>
-    <div class="mfoot">
-      <div class="prow"><button class="b" id="mobbtn">📱 Mobile mode: OFF</button></div>
-      <div class="pwrow"><input id="pw" type="text" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="3" placeholder="code"><button class="b" id="pwgo">🔑 Load code</button></div>
-      <input class="codein" type="text" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="8" aria-label="">
+    <div class="playcol">
+      <button class="b big go" id="pkgo">▶ PLAY</button>
+      <div class="sec2" id="pk2">
+        <button class="b" id="pklevels">🗺 Levels &amp; worlds</button>
+        <button class="b" id="pkintro">🎬 Watch intro</button>
+      </div>
+      <details class="codebox">
+        <summary>🔑 Level code</summary>
+        <div class="pwrow"><input id="pw" type="text" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="3" placeholder="000"><button class="b" id="pwgo">Load</button></div>
+      </details>
     </div>
-    <p class="help"><b>Move</b> ← → / A D · <b>Jump</b> ↑ / W / Space (hold = higher) · <b>Action</b> ↓ / S / X · <b>Sprint</b> Shift. <b>Pause &amp; setup</b>: Esc · controller Start · ☰ on phones.</p>
+  </section>
+
+  <!-- legacy launch targets: clicked from code, never shown -->
+  <div id="legacy" hidden>
+    <div id="lgroups"></div><p id="runhint"></p><div id="lvls"></div>
+    <button id="play"></button><button id="story"></button><button id="run"><canvas id="runicon" width="64" height="44"></canvas></button>
+    <button id="temple"></button><button id="maze"></button><button id="pong"></button><button id="pac"></button><button id="tet"></button>
+    <a id="jewels" href="jewels.html"></a><a id="run3d" href="runner3d.html"></a><a id="maze3d" href="maze3d.html"></a><a id="pong3d" href="pong3d.html"></a><a id="pac3d" href="pac3d.html"></a><a id="frog3d" href="frogger3d.html"></a>
+    <button id="intro"></button><button id="wmbtn"></button><button id="mobbtn"></button>
   </div>
+</div>
 
-  <div id="store" class="ov">
-    <h1>🛍️ CAT APP STORE</h1>
-    <div id="sgrid"></div>
-  </div>
+<!-- ===== PAUSE / SETTINGS ===== -->
+<div id="pause" class="ov hide">
+  <header class="ovhead"><h1>🐾 Paws</h1></header>
+  <div id="ptabs"><button class="b" data-t="ph">📱 Touch</button><button class="b" data-t="pad">🎮 Pad</button><button class="b" data-t="kb">⌨️ Keys</button><button class="b gated" data-t="ed">🗺️ Editor</button></div>
+  <div id="pbody"></div>
+  <input class="codein" type="text" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="8" aria-label="">
+  <div class="actrow"><button class="b big go" id="presume">RESUME</button><button class="b" id="prestart">↻ Restart</button><button class="b" id="pmenu">☰ Menu</button></div>
+</div>
 
-  <div id="pause" class="ov hide">
-    <h1>🐾 PAWS SCREEN</h1>
-    <div id="ptabs"><button class="b" data-t="pad">🎮 Controller</button><button class="b" data-t="kb">⌨️ Keyboard</button><button class="b" data-t="ph">📱 Phone</button><button class="b gated" data-t="ed">🗺️ Map Editor</button></div>
-    <div id="pbody"></div>
-    <input class="codein" type="text" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="8" aria-label="">
-    <div class="prow"><button class="b big" id="presume">RESUME</button><button class="b" id="prestart">Restart level</button><button class="b" id="pmenu">Level select</button></div>
-  </div>
+<!-- ===== ENDLESS RUN SETUP ===== -->
+<div id="runsetup" class="ov hide">
+  <header class="ovhead"><h1>🏃 Endless Run</h1></header>
+  <div id="rsbody"></div>
+  <div class="actrow"><button class="b big go" id="rsgo">▶ GO!</button><button class="b" id="rsmap">🗺 Run map</button><button class="b" id="rsback">Back</button></div>
+</div>
 
-  <div id="runsetup" class="ov hide">
-    <h1>🏃 ENDLESS RUN</h1>
-    <div id="rsbody"></div>
-    <div class="prow"><button class="b big" id="rsgo">▶ GO!</button><button class="b" id="rsmap">🗺️ Run Map</button><button class="b" id="rsback">Back</button></div>
-  </div>
+<!-- ===== MAP PICKER (temple / maze) ===== -->
+<div id="gm" class="ov hide">
+  <header class="ovhead"><h1 id="gmt"></h1></header>
+  <div id="gmtabs"></div>
+  <canvas id="gmc" width="800" height="270"></canvas>
+  <p class="sub" id="gmi"></p>
+  <div class="actrow"><button class="b big go" id="gmgo">▶ GO!</button><button class="b" id="gmback">Back</button></div>
+</div>
 
-  <div id="gm" class="ov hide"><h1 id="gmt"></h1><div id="gmtabs"></div><canvas id="gmc" width="800" height="270"></canvas><p class="sub" id="gmi"></p><div class="prow"><button class="b big" id="gmgo">▶ GO!</button><button class="b" id="gmback">Back</button></div></div>
+<!-- ===== WORLD / LEVEL MENU ===== -->
+<div id="wm" class="ov hide">
+  <header class="ovhead"><h1>🌍 Worlds</h1></header>
+  <div id="wmtabs"><button class="b" data-t="story">📖 Story</button><button class="b" data-t="free">🎮 Free play</button></div>
+  <div id="wmbody"></div>
+  <div class="actrow"><button class="b big" id="wmclose">Close</button></div>
+</div>
 
-  <div id="wm" class="ov hide">
-    <h1>🌍 WORLD MENU</h1>
-    <div id="wmtabs"><button class="b" data-t="story">📖 Story</button><button class="b" data-t="free">🎮 Free Play</button></div>
-    <div id="wmbody"></div>
-    <p class="help">Hover a level to peek at its map. 🟥 enemies · 🟨 fish · 🟩 goal. In Free Play, tap a level to pick it.</p>
-    <button class="b big" id="wmclose">CLOSE</button>
-  </div>
-
-  <div id="msg" class="ov hide">
+<!-- ===== MESSAGE CARD ===== -->
+<div id="msg" class="ov hide">
+  <div class="card2">
     <h1 id="mt"></h1>
     <p class="sub" id="ms"></p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center" id="mb"></div>
+    <div id="mb"></div>
   </div>
 </div>
 
 <div id="thumb"><canvas width="300" height="84"></canvas><div id="thumbn"></div></div>
-<div id="pad">
-  <div class="grp"><button data-k="l" aria-label="Move left">◀</button><button data-k="r" aria-label="Move right">▶</button></div>
-  <div class="grp"><button data-k="s" aria-label="Sprint" id="spr">SPRINT</button><button data-k="a" aria-label="Action">ACT</button><button data-k="j" aria-label="Jump">JUMP</button></div>
-</div>
 
 <script src="game.js"></script>
 <script src="store.js"></script>
-<script src="tiles.js"></script>
-
+<script src="mobile.js"></script>
 </body>
 </html>
