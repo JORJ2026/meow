@@ -110,7 +110,7 @@ body.mob #swc{width:54px;height:54px;top:46px}
 #rot{position:fixed;inset:0;z-index:60;display:none;background:#15122e;flex-direction:column;align-items:center;justify-content:center;gap:14px;font:800 20px system-ui;text-align:center;padding:20px}
 #rot span{font-size:64px;display:inline-block;animation:rotp 2s ease-in-out infinite}
 @keyframes rotp{0%,30%{transform:rotate(0)}70%,100%{transform:rotate(-90deg)}}
-@media (orientation:portrait){body.mob #rot{display:flex}}
+
 #mobbtn.on{background:#2a7fff;border-color:#1a4fb0}
 #pad{display:none;justify-content:space-between;align-items:center;padding:8px 14px 10px;gap:10px}
 #pad.show{display:flex}
@@ -267,7 +267,7 @@ body.mob #pad button{min-height:56px;min-width:60px;border:2px solid rgba(255,25
 body.mob #pad button[data-k=s]{background:rgba(255,92,92,.45)}
 #pad.nospr button[data-k=s]{display:none}                                     /*36 sprint only in platformer*/
 #pad button[data-k=a]{background:rgba(255,157,46,.4)}                        /*37 action colour*/
-@media (max-width:760px) and (orientation:portrait){body::after{content:'↻ Rotate your phone sideways for the best view';position:fixed;left:0;right:0;top:0;padding:8px;text-align:center;font:800 13px system-ui;background:#ffd84a;color:#1b1440;z-index:99;pointer-events:none}} /*38 rotate hint*/
+
 body.mob #top{gap:6px}                                                       /*39 icon spacing*/
 #top button{border:2px solid rgba(255,255,255,.3);min-width:42px;min-height:34px} /*40 icon size+border*/
 #top{padding-right:env(safe-area-inset-right)}                               /*41 notch safe area*/
@@ -506,3 +506,9 @@ body.mob #menu .mleft>.prow>#frog3d{grid-column:5;grid-row:3;order:4!important;d
 body.mob #menu .mleft>.prow>#frog3d .bw{display:flex;flex-direction:column;align-items:center;line-height:1}
 body.mob #menu .mleft>.prow>#frog3d .bt{font-size:clamp(9px,2.5dvh,11px);letter-spacing:.3px}
 body.mob #menu .mleft>.prow>#frog3d .bi{width:1.7em;height:1.7em;font-size:.95em;padding:0;background:#17121f;color:#ffd84a;display:flex;align-items:center;justify-content:center;border-radius:6px}
+
+/* mobile story / run world map: the pad walks (◀ ▶) and its JUMP key reads "▶ PLAY" to start a node */
+body.mob.inworld #pad{display:flex}
+body.mob.inworld #pad [data-k=s],body.mob.inworld #pad [data-k=a]{display:none}
+body.mob.inworld #pad [data-k=j]{font-size:0;min-width:124px}
+body.mob.inworld #pad [data-k=j]::after{content:'▶ PLAY';font-size:17px;font-weight:900;letter-spacing:1px;color:#fff}

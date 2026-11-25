@@ -13,7 +13,7 @@
     { id: 'maze3d', name: 'Maze 3D', blurb: 'Fog-of-war maze', icon: '🧩', img: 'img/prev/maze.webp' },
     { id: 'pong3d', name: 'Pong 3D', blurb: 'Yarn ball, first to 5', icon: '🏓', img: 'img/prev/pong.webp' },
     { id: 'pac3d', name: 'Pac 3D', blurb: 'Kibble maze in 3D', icon: '🐾', img: 'img/prev/pac.webp' },
-    { id: 'frog3d', name: 'Cross Road 3D', blurb: 'Hop the road and river', icon: '🚗', img: 'img/prev/run3d.webp' }
+    { id: 'frog3d', name: 'Cross Road 3D', blurb: 'Hop the road and river', icon: '🚗', img: 'img/prev/run3d.webp', href: 'frogger3d.html' }
   ];
   const $ = id => document.getElementById(id);
   const store = $('store'), menu = $('menu');
@@ -46,6 +46,7 @@
   $('pkback').onclick = home;
   $('pkgo').onclick = () => {
     if (!chosen) return home();
+    if (chosen.href) { location.href = chosen.href; return; }
     const el = $(chosen.id);
     if (el) el.click();
   };

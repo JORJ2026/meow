@@ -2514,7 +2514,7 @@ document.getElementById('top').parentNode.appendChild(swB);let swLast=-1;
 function swPaint(){if(swLast===sel)return;swLast=sel;const g=swC.getContext('2d'),c=CATS[sel];g.clearRect(0,0,124,124);
   const sc=84/Math.max(c.w,c.h)/SPR/1.0,w=c.w*SPR*sc,h=c.h*SPR*sc;try{drawCat(g,c,62-w/2,66-h/2,w,h,1,0,{});}catch(_){}}
 swB.onclick=e=>{switchChar();swPaint();swB.blur();};
-setInterval(()=>{document.body.classList.toggle('inmenu',!((state==='play'||state==='dead'||state==='win'||state==='temple'||state==='maze'||state==='tpwin'||state==='mzwin'||state==='pong'||state==='pac'||state==='pgwin'||state==='pcwin'||state==='tet'||state==='ttwin')&&!paused&&$('menu').classList.contains('hide')));swPaint();swB.style.display=((state==='play'||state==='dead'||state==='win')&&!!P)?'block':'none';},200);
+setInterval(()=>{document.body.classList.toggle('inmenu',!((state==='play'||state==='dead'||state==='win'||state==='temple'||state==='maze'||state==='tpwin'||state==='mzwin'||state==='pong'||state==='pac'||state==='pgwin'||state==='pcwin'||state==='tet'||state==='ttwin')&&!paused&&$('menu').classList.contains('hide')));document.body.classList.toggle('inworld',state==='world');swPaint();swB.style.display=((state==='play'||state==='dead'||state==='win')&&!!P)?'block':'none';},200);
 document.getElementById('mute').onclick=e=>{audioInit();muted=!muted;e.target.textContent=muted?'🔇':'🔊';};
 function drawCards(){
   drawRunIcon();
