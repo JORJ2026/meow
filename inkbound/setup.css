@@ -1,0 +1,13 @@
+#announcement.paused{top:9%}
+#setup{width:min(640px,calc(100vw - 32px));max-height:86vh}
+#setupBody{display:flex;flex-direction:column;gap:8px;max-height:56vh;overflow:auto;padding-right:4px}
+.setup-tabs,.opt-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.setup-tabs button[aria-pressed="true"],.opt-row button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
+#setupBody .set-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}
+#setupBody .set-row:has(input[type=range]){grid-template-columns:1fr 1.4fr 44px}
+#setupBody .set-row output{color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+#setupBody .set-row:has(.opt-row){grid-template-columns:90px 1fr}
+#setupBody .key-bind{min-width:120px;justify-self:end;text-transform:uppercase;letter-spacing:1px}
+#setupBody select{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:5px;padding:9px 10px}
+#setupBody .moves div{padding:4px 0;color:var(--muted)}
+#setupBody .moves div:first-child{color:var(--ink)}
