@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0b0820">
+<title>Cat Tetris</title>
+<link rel="stylesheet" href="tetris3d.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"><span class="pill" id="sc">🐾 0</span><span class="pill" id="ln">LINES 0</span><span class="pill" id="lv">LV 1</span><span class="pill" id="bs">BEST 0</span></div>
+<div class="side" id="holdbox">HOLD<canvas id="hd" width="96" height="96"></canvas></div>
+<div class="side" id="nextbox">NEXT<canvas id="nx" width="96" height="96"></canvas></div>
+<div id="banner"></div>
+<a id="back" href="index.html" aria-label="Back to menu">✕</a>
+<div id="over" hidden><div class="ttl">GAME OVER</div><div id="fin"></div><div class="tap">TAP TO PLAY</div></div>
+<script type="module" src="tetris3d.js"></script>
+</body>
+</html>
