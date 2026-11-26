@@ -44,3 +44,7 @@ Music: 19 MIDI songs in music/ play shuffled in every game; Hard Knock Life play
 - Music stops when you exit a game (back to the menu/store, or leaving a game page). A new random song starts when the next game starts.
 - Intro song (Hard Knock Life) now plays for 45 seconds instead of 15.
 - All MIDI music (cat games, Elk River Bandit, MIDI app) has a volume limiter so it never gets too loud, plus a slight synth layer.
+
+## 1.5.4
+- Desktop: Levels & worlds screen works with the arrow keys + Enter (Esc closes), a controller D-pad, and clicks on Story levels (locked ones show 🔒). The world map can be clicked to play a level, and the mouse wheel moves along it. Pause/menu cards also move with the arrow keys.
+- 1019 code: unlocks every level on every map (story map, Cat Run map, and the Temple / Maze / Pong / Pac / Tetris maps) and opens the level Editor. It now also works in the "🔑 Level code" box. The Editor has a list to jump straight to any level.

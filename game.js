@@ -1727,7 +1727,7 @@ function edHTML(){
   const m=getMS(edIdx),nm=LEVEL_NAMES[edIdx];
   const chip=(on,attrs,l)=>'<button class="b chip'+(on?' on':'')+'" '+attrs+'>'+l+'</button>';
   const num=(k,label,d,v)=>'<tr><td>'+label+'</td><td>'+chip(0,'data-a="ednum" data-k="'+k+'" data-d="-'+d+'"','−')+' <b>'+v+'</b> '+chip(0,'data-a="ednum" data-k="'+k+'" data-d="'+d+'"','+')+'</td></tr>';
-  let h='<p style="margin:0 0 6px">Editing: <b>'+esc(nm)+'</b> '+chip(0,'data-a="edmap" data-d="-1"','◀')+chip(0,'data-a="edmap" data-d="1"','▶')+((state==='play'&&edIdx===lvIdx)?' <span class="note">press Restart level to apply</span>':'')+'</p><table>';
+  let h='<p style="margin:0 0 6px">Editing: <b>'+esc(nm)+'</b> '+chip(0,'data-a="edmap" data-d="-1"','◀')+chip(0,'data-a="edmap" data-d="1"','▶')+' <select id="edpick" aria-label="Pick a level to edit">'+EDLIST.map(i=>'<option value="'+i+'"'+(i===edIdx?' selected':'')+'>'+esc(LEVEL_NAMES[i])+'</option>').join('')+'</select>'+((state==='play'&&edIdx===lvIdx)?' <span class="note">press Restart level to apply</span>':'')+'</p><table>';
   h+=num('den','Enemy density',10,m.den);
   h+='<tr><td>Enemies</td><td>'+ALLEN.map(k=>chip(m.en[k],'data-a="edt" data-g="en" data-k="'+k+'"',EMO[k]+' '+k)).join('')+'</td></tr>';
   h+='<tr><td>Obstacles</td><td>'+Object.keys(OBL).map(k=>chip(m.ob[k],'data-a="edt" data-g="ob" data-k="'+k+'"',OBL[k])).join('')+'</td></tr>';
@@ -2050,6 +2050,7 @@ function padMove(d){
 }
 function padClick(){const it=padItems();if(it[padFocus])it[padFocus].click();}
 function navPad(edge,ax,ay){
+  if(!$('wm').classList.contains('hide'))return;   /* Levels & worlds screen has its own controller navigation */
   const D={L:edge(14),R:edge(15),U:edge(12),D:edge(13)};
   const sx=ax<-.5?'L':ax>.5?'R':'',sy=ay<-.5?'U':ay>.5?'D':'';
   if(sx&&sx!==gpAx[0])D[sx]=true; if(sy&&sy!==gpAx[1])D[sy]=true; gpAx=[sx,sy];
@@ -2160,6 +2161,7 @@ $('pbody').addEventListener('click',e=>{
   else if(a==='ph'){const v=b.dataset.v;S.ph[b.dataset.k]=v==='true'?true:v==='false'?false:(isNaN(+v)?v:+v);saveS();applyPhone();}
   renderPause();
 });
+$('pbody').addEventListener('change',e=>{if(e.target&&e.target.id==='edpick'){edIdx=+e.target.value;renderPause();const s2=$('edpick');if(s2)s2.focus();}});
 $('ptabs').addEventListener('click',e=>{const b=e.target.closest('button[data-t]');if(!b)return;ptab=b.dataset.t;rebind=null;renderPause();});
 $('presume').onclick=()=>togglePause(false);
 $('prestart').onclick=()=>{togglePause(false);startLevel();};
@@ -2632,7 +2634,7 @@ function wmBuild(){
     const d=document.createElement('div');d.className='wsec';
     const h=document.createElement('h3');h.textContent=title;d.appendChild(h);
     const r=document.createElement('div');r.className='wrow';
-    items.forEach(([i,label,boss])=>{const x=document.createElement('button');x.className='b'+(boss?' boss':'');x.textContent=label;hoverThumb(x,i);x.onclick=()=>{if(wmTab==='free'){setLv(i);closeWM();}};r.appendChild(x);});
+    items.forEach(([i,label,boss])=>{const x=document.createElement('button');x.className='b'+(boss?' boss':'');x.textContent=label;hoverThumb(x,i);x.onclick=()=>wmPick(i);if(wmTab==='story'&&!wmReach(i))x.classList.add('lk');r.appendChild(x);});
     d.appendChild(r);b.appendChild(d);
   };
   if(wmTab==='story'){
@@ -2646,7 +2648,17 @@ function wmBuild(){
   }
   b.scrollTop=0;
 }
-function openWM(){wmTab=state==='world'?'story':wmTab;$('wm').classList.remove('hide');wmBuild();}
+function wmSeq(lv){for(let k=0;k<SEQ.length;k++)if(SEQ[k].lv===lv)return k;return -1;}
+function wmReach(lv){if(UNL)return true;const k=wmSeq(lv);return k>=0&&k<=((S.story&&S.story.at)||0);}
+function wmPick(lv){
+  if(wmTab==='free'){setLv(lv);closeWM();return;}
+  const k=wmSeq(lv);if(k<0){setLv(lv);closeWM();return;}
+  if(!wmReach(lv)){toast('🔒 Reach this level on the map first');return;}
+  closeWM();audioInit();OWM='story';RUN=false;RUNNODE=null;if(!S.story||S.story.at==null)S.story={at:0};
+  if(window.cqStore){try{document.getElementById('store').classList.add('hide');}catch(_){}}
+  enterNode(k);
+}
+function openWM(){wmTab=state==='world'?'story':wmTab;$('wm').classList.remove('hide');wmBuild();setTimeout(()=>{const f=document.querySelector('#wmbody button:not(.lk)')||document.querySelector('#wmbody button');if(f)f.focus({preventScroll:true});},30);}
 function closeWM(){$('wm').classList.add('hide');hideThumb();}
 $('wmbtn').onclick=openWM;$('wmclose').onclick=closeWM;
 document.querySelectorAll('#wmtabs button').forEach(x=>x.onclick=()=>{wmTab=x.dataset.t;wmBuild();});
@@ -2889,14 +2901,21 @@ function drawWavy(txt,cx,y,size,tm){
 }
 (function(){const h=document.querySelector('#menu h1');h.innerHTML='<span class="pw">🐾</span> '+[...'CAT QUEST'].map((c,i)=>c===' '?'<span style="width:.35em;display:inline-block"></span>':'<span class="wv" style="--i:'+i+'">'+c+'</span>').join('')+' <span class="pw" style="--i:5">🐾</span>';})();
 /* unlock boxes (menu, controller tab, paws) */
+/* 1019: unlocks every level on every map and opens the level editor (pause menu, Editor tab) */
+function codeDone(){
+  if(!UNL){renderPause();return;}
+  try{if(!$('wm').classList.contains('hide'))wmBuild();}catch(_){}
+  try{if(GM)gmInfo();}catch(_){}
+  ptab='ed';if(!paused)togglePause(true);else{edIdx=EDLIST.includes(lvIdx)?lvIdx:edIdx;renderPause();}
+}
 document.addEventListener('keydown',e=>{
   const t=e.target;if(!(t&&t.classList&&t.classList.contains('codein'))||e.key==='Escape')return;
   e.stopPropagation();
-  if(e.key==='Enter'){if(t.value.trim()==='1019'){UNL=!UNL;applyLock();toast(UNL?'🔓 Everything unlocked!':'🔒 Locked again');renderPause();}t.value='';}
+  if(e.key==='Enter'){if(t.value.trim()==='1019'){UNL=!UNL;applyLock();toast(UNL?'🔓 Everything unlocked!':'🔒 Locked again');codeDone();}t.value='';}
 },true);
 document.addEventListener('keyup',e=>{if(e.target.classList&&e.target.classList.contains('codein')&&e.key!=='Escape')e.stopPropagation();},true);
 /* phones: the code also works as soon as it is typed, no Enter needed */
-document.addEventListener('input',e=>{const t=e.target;if(!(t&&t.classList&&t.classList.contains('codein')))return;if(t.value.trim()==='1019'){UNL=!UNL;applyLock();toast(UNL?'🔓 Everything unlocked!':'🔒 Locked again');t.value='';t.blur();renderPause();}},true);
+document.addEventListener('input',e=>{const t=e.target;if(!(t&&t.classList&&t.classList.contains('codein')))return;if(t.value.trim()==='1019'){UNL=!UNL;applyLock();toast(UNL?'🔓 Everything unlocked!':'🔒 Locked again');t.value='';t.blur();codeDone();}},true);
 
 /* ---------- turn 9: runner as a full mode ---------- */
 let STGV=false;
@@ -3043,7 +3062,7 @@ drawRunHUD=function(){
 let OWM='story',RUNNODE=null;
 RC.map=Object.assign({at:0,stars:{}},RC.map||{});
 try{const o=JSON.parse(localStorage.getItem('catcousins_run2')||'null');if(o&&o.map)RC.map=Object.assign({at:0,stars:{}},o.map);}catch(_){}
-function owAt(){return OWM==='run'?RC.map.at:S.story.at;}
+function owAt(){if(UNL)return 1e6;return OWM==='run'?RC.map.at:S.story.at;}   /* 1019 code: every level on every map is open */
 function nodeInfo(i){
   const s=SEQ[i],w=WORLDS[s.w];let theme,name;
   if(s.boss){theme={cfg:worldCfg(s.w)};name='Run from '+BOSS[s.w][0]+'!';}
@@ -3139,6 +3158,7 @@ function loadCode(v){
   if(m===0){if(!S.story)S.story={at:0};S.story.at=Math.min(SEQ.length,Math.max(S.story.at||0,i+1));saveS();toast('🔑 Loaded: '+label);startStory();}
   else{RC.map.at=Math.min(SEQ.length,Math.max(RC.map.at||0,i+1));saveRC();toast('🔑 Loaded: '+label);openRunMap();}
 }
+$('pw').addEventListener('input',()=>{if($('pw').value.trim()==='1019'){UNL=!UNL;applyLock();toast(UNL?'🔓 Everything unlocked!':'🔒 Locked again');$('pw').value='';$('pw').blur();codeDone();}});   /* the unlock code works here too */
 $('pwgo').onclick=()=>{loadCode($('pw').value);$('pw').value='';};
 $('pw').addEventListener('keydown',e=>{if(e.key==='Escape')return;e.stopPropagation();if(e.key==='Enter'){loadCode($('pw').value);$('pw').value='';}});
 $('pw').addEventListener('keyup',e=>{if(e.key!=='Escape')e.stopPropagation();});
@@ -3685,7 +3705,7 @@ function drawMzHUD(){
 function ptm(){return TP?TP.t:(GM?GM.t:0);}
 const GMC=$('gmc');
 function npos(w,k){return [62+k*76.5,152+Math.sin(k*1.25+w*1.7)*62];}
-function gmUnlocked(i){return i<=PR[GM.kind].at||i%10===0;}
+function gmUnlocked(i){return UNL||i<=PR[GM.kind].at||i%10===0;}
 function openGM(kind){
   MODE=kind;TP=null;MZ=null;CUT=null;CUTARM=false;state='gmap';
   const at=Math.min(99,PR[kind].at);GM={kind,w:Math.floor(at/10),sel:at,t:0};
@@ -4833,4 +4853,69 @@ requestAnimationFrame(frame);
 (()=>{const b=document.getElementById('mapb');if(!b)return;
   b.onclick=()=>{if(!story||OWM!=='story')return;togglePause(false);openWorld();};
   setInterval(()=>{const on=story&&OWM==='story'&&(state==='play'||state==='dead');b.classList.toggle('on',on);},250);
+})();
+
+
+/* ---------- desktop: click the story / run map, and arrow-key menus ---------- */
+(()=>{
+  // click a level on the world map to walk there and play it
+  cv.addEventListener('click',e=>{
+    if(state!=='world'||paused)return;
+    const r=cv.getBoundingClientRect(),px=(e.clientX-r.left)*VW/r.width,py=(e.clientY-r.top)*VH/r.height;
+    for(let i=0;i<SEQ.length;i++){const X=NX[i]-OW.cam,Y=NY[i];
+      if(Math.hypot(X-px,Y-py)<(SEQ[i].boss?27:22)){
+        if(i>Math.min(SEQ.length-1,owAt())){toast('🔒 Beat the level before it first');return;}
+        OW.u=i;enterNode(i);return;}}
+  });
+  cv.addEventListener('mousemove',e=>{
+    if(state!=='world'||paused){if(cv.style.cursor)cv.style.cursor='';return;}
+    const r=cv.getBoundingClientRect(),px=(e.clientX-r.left)*VW/r.width,py=(e.clientY-r.top)*VH/r.height;let on=false;
+    for(let i=0;i<SEQ.length;i++){if(Math.hypot(NX[i]-OW.cam-px,NY[i]-py)<22){on=true;break;}}
+    cv.style.cursor=on?'pointer':'';
+  });
+  // mouse wheel pans the world map
+  cv.addEventListener('wheel',e=>{if(state!=='world'||paused)return;e.preventDefault();const d=(Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY)>0?1:-1;OW.u=Math.max(0,Math.min(Math.min(SEQ.length-1,owAt()),Math.round(OW.u)+d));},{passive:false});
+
+  // arrow keys move between the buttons of an open menu screen; Enter / Space presses
+  const OVS=['#pause','#wm','#runsetup','#msg'];
+  const openOv=()=>{for(const q of OVS){const o=document.querySelector(q);if(o&&!o.classList.contains('hide')&&o.getClientRects().length&&getComputedStyle(o).display!=='none')return o;}return null;};
+  const items=o=>[...o.querySelectorAll('button,select,input')].filter(b=>!b.disabled&&b.getClientRects().length&&getComputedStyle(b).visibility!=='hidden');
+  window.cqNav=function(dir,o){
+    o=o||openOv();if(!o)return false;const L=items(o);if(!L.length)return false;
+    const a=document.activeElement;
+    if(!a||!o.contains(a)){(L.find(b=>!b.classList.contains('lk'))||L[0]).focus();return true;}
+    const ra=a.getBoundingClientRect(),ax=ra.left+ra.width/2,ay=ra.top+ra.height/2;let best=null,bd=1e9;
+    for(const b of L){if(b===a)continue;const r=b.getBoundingClientRect(),bx=r.left+r.width/2,by=r.top+r.height/2,dx=bx-ax,dy=by-ay;
+      let main,side;
+      if(dir==='L'){if(dx>-4||Math.abs(dy)>ra.height*.6)continue;main=-dx;side=Math.abs(dy);}
+      else if(dir==='R'){if(dx<4||Math.abs(dy)>ra.height*.6)continue;main=dx;side=Math.abs(dy);}
+      else if(dir==='U'){if(dy>-8)continue;main=-dy;side=Math.abs(dx);}
+      else{if(dy<8)continue;main=dy;side=Math.abs(dx);}
+      const sc=main+side*2;if(sc<bd){bd=sc;best=b;}}
+    if(!best&&(dir==='L'||dir==='R')){const i=L.indexOf(a);best=L[(i+(dir==='R'?1:-1)+L.length)%L.length];}
+    if(best){best.focus({preventScroll:true});best.scrollIntoView({block:'nearest',inline:'nearest'});}
+    return true;
+  };
+  addEventListener('keydown',e=>{
+    const o=openOv();if(!o)return;
+    const t=e.target;if(t&&t.tagName==='INPUT')return;                                  // typing in a code box
+    if(t&&t.tagName==='SELECT'&&/Arrow(Up|Down)/.test(e.code))return;                // ↑↓ change the level list
+    const D={ArrowLeft:'L',ArrowRight:'R',ArrowUp:'U',ArrowDown:'D'}[e.code];
+    if(D){e.preventDefault();e.stopImmediatePropagation();cqNav(D,o);return;}
+    if(o.id==='wm'&&e.code==='Escape'){e.preventDefault();e.stopImmediatePropagation();closeWM();return;}
+    if((e.code==='Enter'||e.code==='Space')&&document.activeElement&&o.contains(document.activeElement)&&document.activeElement.tagName==='BUTTON'){e.preventDefault();e.stopImmediatePropagation();document.activeElement.click();}
+  },true);
+  // controller: D-pad / stick moves around the Levels & worlds screen too
+  let pv=[],ax0='';
+  setInterval(()=>{
+    const w=$('wm');if(w.classList.contains('hide')){pv=[];return;}
+    let gp=null;try{for(const g of navigator.getGamepads?navigator.getGamepads():[])if(g&&g.connected){gp=g;break;}}catch(_){}
+    if(!gp)return;const pr=gp.buttons.map(b=>b.pressed),ed=i=>pr[i]&&!pv[i];
+    const sx=(gp.axes[0]||0)<-.5?'L':(gp.axes[0]||0)>.5?'R':'',sy=(gp.axes[1]||0)<-.5?'U':(gp.axes[1]||0)>.5?'D':'',st=sx||sy;
+    if(ed(14))cqNav('L',w);if(ed(15))cqNav('R',w);if(ed(12))cqNav('U',w);if(ed(13))cqNav('D',w);
+    if(st&&st!==ax0)cqNav(st,w);ax0=st;
+    if(ed(0)&&document.activeElement&&w.contains(document.activeElement))document.activeElement.click();
+    if(ed(1))closeWM();
+    pv=pr;
+  },60);
 })();
