@@ -1,8 +1,10 @@
 /* Cat Quest Arcade - MIDI jukebox.
    Plays the real .mid files in music/ (listed in music/playlist.json) - nothing is typed into code.
    - reads Standard MIDI Files (format 0/1/2, tempo changes, program / volume / pan changes, drums on channel 10)
-   - plays every song from start to finish, then picks the next song at random (no repeats until all have played)
-   - CQMidi.play('jay-z-hard-knock-life')  plays one song;  CQMidi.next() skips;  CQMidi.mute(true|false)
+   - plays a random 30-second piece of each song, then moves on to another random song (no repeats until all have played)
+   - songs are only ever shown as "Track 1", "Track 2"... (their number in music/playlist.json), never by name
+   - CQMidi.play('jay-z-hard-knock-life', 15) plays the first 15 s of one song;  CQMidi.next() skips;  CQMidi.mute(true|false)
+   - a very small bar at the top of every page shows the track number with next and mute buttons
    - set window.CQ_MUSIC_HOLD = 1 before loading to stop it starting a random song on the first tap */
 (function () {
   'use strict';
@@ -68,19 +70,25 @@
   }
 
   /* ---------- synth (Web Audio, no samples needed) ---------- */
-  var AC = null, master = null, chans = null, noiseBuf = null, voices = 0, MAXV = 44;
+  var AC = null, master = null, chans = null, bus = null, noiseBuf = null, voices = 0, MAXV = 44, gameVol = 1;
+  /* every song gets its own bus, so a song cut off mid-way can fade out cleanly while the next one starts */
+  function mkChans() {
+    if (bus) { var old = bus, t = AC.currentTime; try { old.gain.cancelScheduledValues(t); old.gain.setValueAtTime(old.gain.value, t); old.gain.linearRampToValueAtTime(0, t + 0.25); } catch (e) { } setTimeout(function () { try { old.disconnect(); } catch (e) { } }, 600); }
+    bus = AC.createGain(); bus.gain.value = 1; bus.connect(master);
+    chans = [];
+    for (var i = 0; i < 16; i++) {
+      var g = AC.createGain(), pn = AC.createStereoPanner ? AC.createStereoPanner() : null;
+      if (pn) { g.connect(pn); pn.connect(bus); } else g.connect(bus);
+      chans.push({ g: g, p: pn, vol: 1, ex: 1 });
+    }
+  }
   function mkCtx() {
     if (AC) return AC;
     var C = window.AudioContext || window.webkitAudioContext; if (!C) return null;
     try { AC = new C({ latencyHint: 'playback' }); } catch (e) { try { AC = new C(); } catch (e2) { return null; } }
     var comp = AC.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 6; comp.attack.value = 0.005; comp.release.value = 0.2;
-    master = AC.createGain(); master.gain.value = 0.36; master.connect(comp); comp.connect(AC.destination);
-    chans = [];
-    for (var i = 0; i < 16; i++) {
-      var g = AC.createGain(), pn = AC.createStereoPanner ? AC.createStereoPanner() : null;
-      if (pn) { g.connect(pn); pn.connect(master); } else g.connect(master);
-      chans.push({ g: g, p: pn, vol: 1, ex: 1 });
-    }
+    master = AC.createGain(); master.gain.value = 0.36 * gameVol; master.connect(comp); comp.connect(AC.destination);
+    mkChans();
     var n = AC.sampleRate, b = AC.createBuffer(1, n, AC.sampleRate), x = b.getChannelData(0);
     for (var j = 0; j < n; j++) x[j] = Math.random() * 2 - 1;
     noiseBuf = b; return AC;
@@ -151,15 +159,17 @@
     voices++; o1.onended = function () { voices--; try { e.disconnect(); fl.disconnect(); } catch (x) { } };
   }
 
-  /* ---------- jukebox ---------- */
+  /* ---------- jukebox: random 30-second clips ---------- */
+  var CLIP = 30, FADE = 1.2;
   var list = [], bag = [], cache = {}, cur = null, song = null, idx = 0, startAt = 0, timer = 0, want = false, userMuted = LS('cq_music_mute') === '1', unlocked = false, token = 0, listeners = [];
-  var listP = null, lastId = LS('cq_midi_last') || '';
+  var paused = false, listP = null, lastId = LS('cq_midi_last') || '', clipFrom = 0, clipLen = CLIP, ctlDone = false;
   function loadList() {
     if (listP) return listP;
-    listP = fetch(BASE + 'music/playlist.json').then(function (r) { return r.json(); }).then(function (a) { list = a || []; return list; }).catch(function () { listP = null; return list; });
+    listP = fetch(BASE + 'music/playlist.json').then(function (r) { return r.json(); }).then(function (a) { list = a || []; emit(); return list; }).catch(function () { listP = null; return list; });
     return listP;
   }
   function emit() { listeners.forEach(function (f) { try { f(cur, api); } catch (e) { } }); }
+  function trackNo(id) { for (var i = 0; i < list.length; i++) if (list[i].id === id) return i + 1; return 0; }
   function fetchSong(item) {
     if (cache[item.id]) return Promise.resolve(cache[item.id]);
     return fetch(BASE + 'music/' + item.file).then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
@@ -173,39 +183,60 @@
     }
     var id = bag.pop(); return list.filter(function (x) { return x.id === id; })[0];
   }
-  function begin(item) {
+  /* opts.len = seconds to play (default 30), opts.start = 'random' (default) or a number of seconds */
+  function begin(item, opts) {
+    opts = opts || {};
     var my = ++token; cur = item; lastId = item.id; LS('cq_midi_last', item.id); stopTimer(); song = null; emit();
     fetchSong(item).then(function (s) {
-      if (my !== token) return; song = s; idx = 0; want = true; run(my);
+      if (my !== token) return;
+      clipLen = Math.max(3, opts.len || CLIP);
+      var room = Math.max(0, s.dur - clipLen - 0.5);
+      clipFrom = typeof opts.start === 'number' ? Math.min(opts.start, room) : Math.random() * room;
+      // start on the nearest note so the clip does not open on silence
+      var E = s.ev, i = 0; while (i < E.length && E[i].t < clipFrom) i++;
+      while (i < E.length && E[i].k === 1) i++;
+      if (i < E.length && E[i].t - clipFrom < 2) clipFrom = E[i].t;
+      song = s; idx = 0; ctlDone = false; want = true; startAt = -1;
+      if (AC && unlocked) mkChans();
+      run(my);
     }).catch(function () { if (my === token) { setTimeout(function () { if (my === token && want) api.next(); }, 800); } });
   }
   function run(my) {
-    if (!want || my !== token) return;
+    if (!want || my !== token || !song) return;
     if (!AC || !unlocked) return;                      // starts at the first tap (browsers block sound before that)
-    if (!startAt || startAt === -1) { startAt = AC.currentTime + 0.15; }
+    if (startAt === -1 || !startAt) { startAt = AC.currentTime + 0.15 - clipFrom; bus.gain.cancelScheduledValues(0); bus.gain.setValueAtTime(1, AC.currentTime); }
     resume(); stopTimer(); timer = setInterval(tick, 50);
   }
   function stopTimer() { if (timer) { clearInterval(timer); timer = 0; } }
+  function applyCtl(c, at) {
+    var C = chans[c.ch];
+    if (c.c === 7) { C.vol = c.v / 127; C.g.gain.setValueAtTime(C.vol * C.ex, at); }
+    else if (c.c === 11) { C.ex = c.v / 127; C.g.gain.setValueAtTime(C.vol * C.ex, at); }
+    else if (c.c === 10 && C.p) C.p.pan.setValueAtTime((c.v - 64) / 64 * 0.7, at);
+    else if (c.c === 121) { C.vol = 1; C.ex = 1; C.g.gain.setValueAtTime(1, at); }
+  }
   function tick() {
     if (!AC || !song) return;
-    var now = AC.currentTime, hz2 = now + 0.4, E = song.ev;
-    while (idx < E.length && startAt + E[idx].t < hz2) {
-      var e = E[idx++], at = startAt + e.t;
-      if (e.k === 1) {
-        var C = chans[e.c.ch], c = e.c;
-        if (c.c === 7) { C.vol = c.v / 127; C.g.gain.setValueAtTime(C.vol * C.ex, Math.max(at, now)); }
-        else if (c.c === 11) { C.ex = c.v / 127; C.g.gain.setValueAtTime(C.vol * C.ex, Math.max(at, now)); }
-        else if (c.c === 10 && C.p) C.p.pan.setValueAtTime((c.v - 64) / 64 * 0.7, Math.max(at, now));
-        else if (c.c === 121) { C.vol = 1; C.ex = 1; }
-        continue;
-      }
-      var n = e.n; if (at < now - 0.03) continue;       // too late (tab was busy): skip rather than burst
-      if (n.ch === 9) { if (voices < MAXV + 14) drum(chans[9].g, Math.max(at, now), n.n, n.v); }
-      else if (voices < MAXV || n.v > 100) { try { voice(n.ch, Math.max(at, now), n, n.d, n.v); } catch (x) { } }
+    var now = AC.currentTime, hz2 = now + 0.4, E = song.ev, endT = clipFrom + clipLen;
+    if (!ctlDone) {                                    // volume / pan settings from before the clip start
+      while (idx < E.length && E[idx].t < clipFrom) { if (E[idx].k === 1) applyCtl(E[idx].c, now); idx++; }
+      ctlDone = true;
+      bus.gain.setValueAtTime(1, startAt + endT - FADE); bus.gain.linearRampToValueAtTime(0.0001, startAt + endT);
     }
-    if (idx >= E.length && now > startAt + song.dur + 1.2) { stopTimer(); song = null; api.next(); }   // song finished -> next random song
+    while (idx < E.length && startAt + E[idx].t < hz2 && E[idx].t < endT) {
+      var e = E[idx++], at = startAt + e.t;
+      if (e.k === 1) { applyCtl(e.c, Math.max(at, now)); continue; }
+      var n = e.n; if (at < now - 0.03) continue;       // too late (tab was busy): skip rather than burst
+      var d = Math.min(n.d, endT - e.t + 0.05);
+      if (n.ch === 9) { if (voices < MAXV + 14) drum(chans[9].g, Math.max(at, now), n.n, n.v); }
+      else if (voices < MAXV || n.v > 100) { try { voice(n.ch, Math.max(at, now), n, d, n.v); } catch (x) { } }
+    }
+    var stopT = startAt + Math.min(endT, song.dur + 0.6);
+    if (now >= stopT) {                                // clip over -> next random song
+      stopTimer(); song = null; api.next();
+    }
   }
-  function resume() { if (AC && !userMuted && !document.hidden && AC.state === 'suspended') { try { AC.resume(); } catch (e) { } } }
+  function resume() { if (AC && !userMuted && !paused && !document.hidden && AC.state === 'suspended') { try { AC.resume(); } catch (e) { } } }
   function unlock() {
     if (unlocked) { resume(); return; }
     if (!mkCtx()) return; unlocked = true;
@@ -213,29 +244,35 @@
     if (userMuted) { try { AC.suspend(); } catch (e) { } }
     if (want && song) { startAt = -1; run(token); }
     else if (!want && !window.CQ_MUSIC_HOLD && !cur) api.random();
-    else if (want && !song && cur) { /* still downloading: begin() finishes the start */ }
   }
   ['pointerdown', 'touchend', 'mousedown', 'keydown', 'click'].forEach(function (ev) { addEventListener(ev, unlock, { capture: true, passive: true }); });
   document.addEventListener('visibilitychange', function () {
     if (!AC) return;
-    if (document.hidden) { try { AC.suspend(); } catch (e) { } } else resume();
+    if (document.hidden) { try { AC.suspend(); } catch (e) { } } else if (!paused) resume();
   });
+  function find(id) { return list.filter(function (x) { return x.id === id; })[0] || list.filter(function (x) { return x.id.indexOf(id) >= 0; })[0]; }
 
   var api = {
     list: function () { return list.slice(); },
     current: function () { return cur; },
+    trackNo: function (id) { return trackNo(id || (cur && cur.id)); },
+    /* what to show for a song: never its name, only "Track N" */
+    label: function (id) { var n = trackNo(id || (cur && cur.id)); return n ? 'Track ' + n : 'Music'; },
     isPlaying: function () { return !!(want && song && AC && AC.state === 'running'); },
     muted: function () { return userMuted; },
-    /* play one song by id (or part of its name), from the beginning */
-    play: function (id) {
-      return loadList().then(function () {
-        var it = list.filter(function (x) { return x.id === id; })[0] || list.filter(function (x) { return x.id.indexOf(id) >= 0; })[0];
-        if (!it) return; if (AC && unlocked) startAt = -1; else startAt = 0; want = true; begin(it);
-      });
+    /* play one song by id (or part of its id). opts: {len: seconds, start: seconds} - default is a random 30 s */
+    play: function (id, opts) {
+      if (typeof opts === 'number') opts = { len: opts, start: 0 };
+      paused = false;
+      return loadList().then(function () { var it = find(id); if (!it) return; want = true; begin(it, opts); });
     },
-    random: function () { return loadList().then(function () { if (!list.length) return; if (AC && unlocked) startAt = -1; else startAt = 0; want = true; begin(pickRandom()); }); },
+    random: function () { paused = false; return loadList().then(function () { if (!list.length) return; want = true; begin(pickRandom()); }); },
     next: function () { return api.random(); },
-    stop: function () { want = false; ++token; stopTimer(); song = null; cur = null; emit(); },
+    stop: function () { want = false; ++token; stopTimer(); song = null; cur = null; if (bus) { try { bus.gain.setValueAtTime(0, AC.currentTime); } catch (e) { } } emit(); },
+    pause: function () { paused = true; if (AC) { try { AC.suspend(); } catch (e) { } } },
+    resume: function () { paused = false; resume(); },
+    /* the game's own music volume (0..1), separate from the mute button */
+    volume: function (v) { gameVol = Math.max(0, Math.min(2, +v || 0)); if (master) master.gain.value = 0.36 * gameVol; },
     mute: function (m) {
       userMuted = !!m; LS('cq_music_mute', userMuted ? '1' : '0');
       if (AC) { try { userMuted ? AC.suspend() : resume(); } catch (e) { } }
@@ -246,19 +283,33 @@
     parse: parse                                     // exposed for tests
   };
 
-  /* small music button on pages that have no sound button of their own (the 3D games and Inkbound) */
-  function addButton() {
-    if (window.CQ_MUSIC_NOBTN || document.getElementById('cqmbtn')) return;
+  /* very small music bar on every page: Track N | next | mute  (window.CQ_MUSIC_BAR = 0 hides it, window.CQ_MUSIC_BAR_POS = 'left' | 'right' | 'bottom' | 'bottom-left' moves it) */
+  function addBar() {
+    if (window.CQ_MUSIC_BAR === 0 || document.getElementById('cqmbar')) return;
     var st = document.createElement('style');
-    st.textContent = '#cqmbtn{position:fixed;z-index:2147483000;top:calc(env(safe-area-inset-top,0px) + 6px);right:calc(env(safe-area-inset-right,0px) + 6px);width:30px;height:30px;border-radius:50%;border:1.5px solid rgba(255,255,255,.55);background:rgba(20,20,30,.5);color:#fff;font:15px/1 system-ui;padding:0;opacity:.6;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}#cqmbtn:active{opacity:1}';
+    st.textContent = '#cqmbar{position:fixed;z-index:2147483000;top:calc(env(safe-area-inset-top,0px) + 2px);left:50%;transform:translateX(-50%);display:flex;align-items:stretch;height:20px;background:rgba(10,10,20,.55);border:1px solid rgba(255,255,255,.35);border-radius:0;opacity:.75;font:700 10px/1 system-ui,sans-serif;color:#fff;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}' +
+      '#cqmbar:hover,#cqmbar:active{opacity:1}' +
+      '#cqmbar span{display:flex;align-items:center;padding:0 6px;white-space:nowrap;min-width:44px;justify-content:center}' +
+      '#cqmbar button{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:24px;height:100%;border-left:1px solid rgba(255,255,255,.3);border-radius:0;font:11px/1 system-ui,sans-serif;color:#fff;cursor:pointer;touch-action:manipulation}' +
+      '#cqmbar button:active{background:rgba(255,255,255,.25)}';
+    if (window.CQ_MUSIC_BAR_POS === 'right') st.textContent += '#cqmbar{left:auto;right:calc(env(safe-area-inset-right,0px) + 4px);transform:none}';
+    if (window.CQ_MUSIC_BAR_POS === 'left') st.textContent += '#cqmbar{left:calc(env(safe-area-inset-left,0px) + 4px);transform:none}';
+    if (window.CQ_MUSIC_BAR_POS === 'bottom-left') st.textContent += '#cqmbar{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 2px);left:calc(env(safe-area-inset-left,0px) + 4px);transform:none}';
+    if (window.CQ_MUSIC_BAR_POS === 'bottom') st.textContent += '#cqmbar{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 2px)}';
+    if (window.CQ_MUSIC_BAR_CSS) st.textContent += window.CQ_MUSIC_BAR_CSS;   // a page can give its own spot
     document.head.appendChild(st);
-    var b = document.createElement('button'); b.id = 'cqmbtn'; b.type = 'button'; b.setAttribute('aria-label', 'Music on/off');
-    var paint = function () { b.textContent = userMuted ? '\uD83D\uDD07' : '\uD83C\uDFB5'; b.title = cur ? cur.artist + ' - ' + cur.title : 'Music'; };
-    b.onclick = function (e) { e.stopPropagation(); api.toggle(); paint(); };
-    b.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
-    document.body.appendChild(b); paint(); listeners.push(paint);
+    var bar = document.createElement('div'); bar.id = 'cqmbar'; bar.setAttribute('role', 'group'); bar.setAttribute('aria-label', 'Music');
+    bar.innerHTML = '<span id="cqmlab">Music</span><button type="button" id="cqmnext" aria-label="Next song" title="Next song">⏭︎</button><button type="button" id="cqmmute" aria-label="Mute music" title="Mute music"></button>';
+    var stop = function (e) { e.stopPropagation(); };
+    ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'touchstart', 'touchend', 'click', 'keydown'].forEach(function (ev) { bar.addEventListener(ev, stop); });
+    document.body.appendChild(bar);
+    var lab = bar.querySelector('#cqmlab'), mb = bar.querySelector('#cqmmute');
+    var paint = function () { lab.textContent = cur ? api.label(cur.id) : 'Music'; mb.textContent = userMuted ? '🔇' : '🔊'; mb.setAttribute('aria-label', userMuted ? 'Unmute music' : 'Mute music'); };
+    bar.querySelector('#cqmnext').addEventListener('click', function () { unlock(); api.next(); });
+    mb.addEventListener('click', function () { unlock(); api.toggle(); paint(); });
+    paint(); listeners.push(paint);
   }
-  if (document.body) addButton(); else document.addEventListener('DOMContentLoaded', addButton);
+  if (document.body) addBar(); else document.addEventListener('DOMContentLoaded', addBar);
   window.CQMidi = api;
   loadList();
 })();

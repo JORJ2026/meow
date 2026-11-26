@@ -23,6 +23,7 @@
   }
   function deckProfile(ui) {
     if (ui !== 'game' || !hidden('msg')) return '';
+    if (body.classList.contains('desk')) return '';   // desktop mode: keyboard / controller, no thumb buttons
     const ph = S.ph || {};
     if (ph.show === 'off') return '';
     if (ph.show !== 'on' && !touchy) return '';
@@ -76,8 +77,11 @@
     body.dataset.rot = rotNow;
     body.dataset.o = o; body.dataset.ui = ui; body.dataset.deck = prof; body.dataset.spr = sprOK;
     const room = W - 32 - (parseFloat(getComputedStyle(body).getPropertyValue('--sal')) || 0);
-    document.documentElement.style.setProperty('--fit', Math.max(.7, Math.min(1, (W - 40) / 372)).toFixed(3));
-    document.documentElement.style.setProperty('--side', Math.max(118, Math.min(168, Math.round(W * 0.17))) + 'px');
+    const side = Math.max(118, Math.min(168, Math.round(W * 0.17)));
+    // landscape: shrink the thumb controls so they fit inside the side columns and never overlap each other or the picture
+    const fitL = Math.max(.5, Math.min(1, (side - 16) / 134, (H - 70) / 205));
+    document.documentElement.style.setProperty('--fit', (o === 'l' ? fitL : Math.max(.7, Math.min(1, (W - 40) / 372))).toFixed(3));
+    document.documentElement.style.setProperty('--side', side + 'px');
     fit();
     labels();
   }

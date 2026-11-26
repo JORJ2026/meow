@@ -110,7 +110,7 @@
       const t = setInterval(() => {
         if (state === 'menu' && !$('store').classList.contains('hide')) {
           clearInterval(t);
-          const i = ['story', 'run', 'temple', 'maze', 'pong', 'pac', 'tet', 'jewels'].indexOf(q);
+          const i = ((window.cqStore && cqStore.games) || []).findIndex(g => g.id === q);
           const c = document.querySelectorAll('.scard')[i]; c && c.click();
         }
       }, 300);

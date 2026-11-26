@@ -1,4 +1,4 @@
-import * as THREE from 'https://esm.sh/three@0.160.0';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 // Shared 3D characters: the selected cat and the dog. Colors mirror CATS in game.js.
 export const CATS3D=[
  {id:'billy',name:'Bobby',body:'#25252d',tux:true,eye:'#9fe870',collar:'#e63946',size:1.0},

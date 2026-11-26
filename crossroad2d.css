@@ -66,3 +66,19 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 #coach.out{opacity:0}
 body[data-o="l"] #coach{top:calc(var(--sat) + 76px)}
 @keyframes coachin{from{opacity:0;transform:translate(-50%,-12px) scale(.9)}}
+#hlives.last{animation:lastheart 1s ease-in-out infinite}
+@keyframes lastheart{50%{transform:scale(1.18);filter:drop-shadow(0 0 6px #ff4d6d)}}
+@media (prefers-reduced-motion:reduce){#hlives.last{animation:none}}
+#hud .mid{white-space:nowrap;gap:9px;font-size:14px;flex-wrap:nowrap}#hlives{font-size:12px;letter-spacing:-1px}
+#hud .hp b{white-space:nowrap}#hud .hp:first-child{min-width:0;flex:1 1 auto;max-width:46vw}#hud .hp small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* narrow phones: the level name can no longer run into the timer and hearts */
+#hud .hp:first-child{overflow:hidden}
+#hud .hp:first-child b{overflow:hidden;text-overflow:ellipsis}
+@media (max-width:380px){
+  #hud{gap:6px;padding-left:calc(var(--sal) + 6px);padding-right:calc(var(--sar) + 6px)}
+  #hud .hp{padding:5px 8px}
+  #hud .hp b{font-size:13px}
+  #hud .mid{gap:6px;font-size:12px}
+  #hud .hp:first-child{max-width:38vw}
+}

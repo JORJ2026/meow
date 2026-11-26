@@ -15,3 +15,11 @@ html,body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-
 #p3splash button,#p3splash a{display:inline-flex;align-items:center;justify-content:center;font:900 16px system-ui;padding:12px 20px;min-height:48px;border-radius:999px;border:3px solid rgba(255,255,255,.4);background:#3b2f86;color:#fff;text-decoration:none;cursor:pointer}
 #p3splash button{background:linear-gradient(#ffb23a,#ff8a1e);color:#2a1a00;border-color:#fff3d0}
 @media (prefers-reduced-motion:reduce){#p3splash .paw{animation:none}}
+
+#p3splash{animation:p3in .25s ease .15s both}          /* P8: no flash of the loading screen on fast loads */
+@keyframes p3in{from{opacity:0}}
+#p3splash .tip{font-size:13px;opacity:.75;margin-top:10px;padding:8px 14px;border-radius:12px;background:rgba(255,255,255,.08)}
+#p3guard{position:fixed;inset:0;z-index:45;display:grid;place-items:center;background:rgba(10,6,34,.55);color:#fff;font:900 22px system-ui;text-shadow:0 2px 0 #000}
+#p3guard b{padding:14px 22px;border-radius:999px;background:rgba(18,10,52,.8);border:2px solid #ffd84a}
+button:focus-visible,a:focus-visible{outline:3px solid #ffd84a!important;outline-offset:3px}   /* P9 */
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}   /* P10 */

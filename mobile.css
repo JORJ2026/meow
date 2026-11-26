@@ -439,3 +439,21 @@ body[data-o="p"] #toast.top{top:auto}
 button.b:active{transform:translateY(2px) scale(.98)}                                          /* V3 every button presses down */
 #msg button,#msg .b{min-height:48px}                                                           /* V6 48 px touch targets in result dialogs */
 #pkwhint{margin:6px 2px 0;font:700 12px/1.3 system-ui;opacity:.8;text-align:left}
+
+/* ===== phone fixes: smaller corner buttons that do not cover the hearts or each other ===== */
+@media (max-height:500px),(max-width:500px){
+  #top{gap:4px}
+  #top button{width:32px;height:32px;font-size:15px;border-radius:0;border-width:1px}
+  #top button::after{inset:-3px}
+  body[data-o="l"] #mv,body[data-o="l"] #acts{transform:scale(calc(var(--ds) * .78 * var(--fit,1)))}
+  body[data-o="l"][data-deck="dpad"] #mv,body[data-o="l"][data-deck="pong"] #mv{transform:scale(calc(var(--ds) * .8 * var(--fit,1)))}
+}
+
+/* ===== pause menu: unlock code box + desktop mode switch (square edges) ===== */
+#pause .prow2{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;flex:0 0 auto}
+#pause .prow2 .codein{position:static;left:auto;width:110px;height:40px;opacity:1;border-radius:0;font-size:16px;letter-spacing:2px;padding:0 6px}
+#pause .prow2 .codein::placeholder{color:rgba(255,255,255,.45);letter-spacing:0}
+#pause .prow2 button.b{border-radius:0;min-height:40px;padding:8px 12px;font-size:14px}
+/* desktop mode: no on-screen thumb controls, the picture gets the whole screen */
+body.desk #deck{display:none!important}
+body.desk[data-o="l"] #stage{margin:0!important}

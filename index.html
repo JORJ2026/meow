@@ -88,7 +88,7 @@
   <header class="ovhead"><h1>🐾 Paws</h1></header>
   <div id="ptabs"><button class="b" data-t="ph">📱 Touch</button><button class="b" data-t="pad">🎮 Pad</button><button class="b" data-t="kb">⌨️ Keys</button><button class="b gated" data-t="ed">🗺️ Editor</button></div>
   <div id="pbody"></div>
-  <input class="codein" type="text" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="8" aria-label="">
+  <div class="prow2"><input class="codein" id="pcode" type="text" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="8" placeholder="🔑 Code" enterkeyhint="go" aria-label="Unlock code"><button class="b" id="pdesk" type="button" aria-pressed="false">🖥 Desktop mode: Off</button></div>
   <div class="actrow"><button class="b big go" id="presume">RESUME</button><button class="b" id="prestart">↻ Restart</button><button class="b" id="pmenu">☰ Menu</button></div>
 </div>
 
@@ -127,11 +127,13 @@
 
 <div id="thumb"><canvas width="300" height="84"></canvas><div id="thumbn"></div></div>
 
-<script>window.CQ_MUSIC_HOLD=1;window.CQ_MUSIC_NOBTN=1;</script>
+<script>window.CQ_MUSIC_HOLD=1;window.CQ_MUSIC_NOBTN=1;window.CQ_MUSIC_BAR_POS='left';</script>
 <script src="midi.js"></script>
 <script src="game.js"></script>
 <script src="store.js"></script>
 <script src="mobile.js"></script>
+<script src="portrait.js"></script>
+<script src="desktop.js"></script>
 <script src="improve.js"></script>
 <script src="badges.js"></script>
 <script src="release.js"></script>

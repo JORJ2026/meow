@@ -73,5 +73,9 @@
    "form_factor": "wide",
    "label": "Inkbound"
   }
- ]
+ ],
+ "launch_handler": {
+  "client_mode": "focus-existing"
+ },
+ "lang": "en"
 }

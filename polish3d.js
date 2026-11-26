@@ -10,7 +10,7 @@
   try { const id = { 'tetris3d': 'tet', 'jewels': 'jewels', 'runner3d': 'run3d', 'maze3d': 'maze3d', 'pong3d': 'pong3d', 'pac3d': 'pac3d', 'frogger3d': 'frog3d' }[(location.pathname.split('/').pop() || '').replace('.html', '')]; if (id) localStorage.setItem('cq_lastgame', id); } catch (_) {}
   // real store screenshot: the first time a 3D game is played, grab one real frame for its store card
   const SHOT_ID = { 'tetris3d': 'tet', 'jewels': 'jewels', 'runner3d': 'run3d', 'maze3d': 'maze3d', 'pong3d': 'pong3d', 'pac3d': 'pac3d', 'frogger3d': 'frog3d' }[(location.pathname.split('/').pop() || '').replace('.html', '')];
-  let needShot = false; try { needShot = !!SHOT_ID && !localStorage.getItem('cq_shot_' + SHOT_ID); } catch (_) {}
+  const needShot = false;   // turned off: the store uses the designed pictures in img/prev/
   if (needShot) {
     // keep the WebGL picture readable just for this visit, so it can be copied once
     const gc = HTMLCanvasElement.prototype.getContext;

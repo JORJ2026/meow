@@ -16,7 +16,14 @@
     { id: 'frog3d', name: 'Cross Road 3D', blurb: '55 levels in 10 themed worlds', icon: '🚗', img: 'img/prev/frog3d.webp', href: 'frogger3d.html' },
     { id: 'cross2d', name: 'Cross Road 2D', blurb: '50 levels · roads, rails, rivers', icon: '🛣️', img: 'img/prev/cross2d.webp', href: 'crossroad2d.html' },
     { id: 'inkbound', name: 'Inkbound', blurb: 'Classic-cartoon platform fighter', icon: '🖋️', img: 'img/prev/inkbound.webp', href: 'inkbound/index.html' },
-    { id: 'elkriver', name: 'Elk River Bandit', blurb: 'Raccoon trash bandit · run, jump, spell', icon: '🦝', img: 'img/prev/elkriver.webp', href: 'elkriver/index.html' }
+    { id: 'elkriver', name: 'Elk River Bandit', blurb: 'Raccoon trash bandit · run, jump, spell', icon: '🦝', img: 'img/prev/elkriver.webp', href: 'elkriver/index.html', direct: 1 },
+    { id: 'lanternwoods', name: 'Lantern Woods', blurb: 'Farm sim about too many jobs', icon: '🏮', img: 'img/prev/lanternwoods.webp', href: 'apps/lanternwoods/index.html', direct: 1 },
+    { id: 'farmingsim', name: 'Farming Sim', blurb: 'Wildroot · survive, build, farm', icon: '🌾', img: 'img/prev/farmingsim.webp', href: 'apps/farmingsim/index.html', direct: 1 },
+    { id: 'paint', name: 'Paint', blurb: 'Draw and paint in 2D and 3D', icon: '🎨', img: 'img/prev/paint.webp', href: 'apps/paint/index.html', direct: 1 },
+    { id: 'texteditor', name: 'Text Editor', blurb: 'Hand-drawn logo text maker', icon: '✏️', img: 'img/prev/texteditor.webp', href: 'apps/texteditor/index.html', direct: 1 },
+    { id: 'catarcade', name: 'Cat Arcade (old)', blurb: 'The original cat arcade', icon: '🕹️', img: 'img/prev/catarcade.webp', href: 'https://jorj2026.github.io/nobodypurrfect/', direct: 1 },
+    { id: 'oldschool', name: 'Old School', blurb: 'Play your homemade GBA & SNES games', icon: '🎮', img: 'img/prev/oldschool.webp', href: 'apps/oldschool/index.html', direct: 1 },
+    { id: 'midi', name: 'MIDI', blurb: 'Piano MIDI visualizer', icon: '🎹', img: 'img/prev/midi.webp', href: 'apps/midi/index.html', direct: 1 }
   ];
   const $ = id => document.getElementById(id);
   const store = $('store'), menu = $('menu');
@@ -35,6 +42,8 @@
     c.addEventListener('click', go);
     c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
     grid.appendChild(c);
+    const im = c.querySelector('.sshot img'); const ok = () => im.classList.add('ld');   // fade the picture in once it has loaded
+    if (im.complete && im.naturalWidth) ok(); else { im.addEventListener('load', ok); im.addEventListener('error', ok); }
   });
 
   function home() {
@@ -45,6 +54,7 @@
     store.classList.remove('hide');
   }
   function pick(g) {
+    if (g.direct) { try { localStorage.setItem('cq_lastgame', g.id); } catch (_) {} location.href = g.href; return; }   // apps with their own start screen - no cat sheet
     chosen = g;
     scrollY0 = grid.scrollTop;
     try { localStorage.setItem('cq_lastgame', g.id); } catch (_) {}

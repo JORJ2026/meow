@@ -1763,7 +1763,7 @@ function introPress(){
   if(introT>45)endIntro();
 }
 let gateStage=0;
-function introSong(){try{window.CQMidi&&CQMidi.play('hard-knock-life');}catch(e){}}
+function introSong(){try{window.CQMidi&&CQMidi.play('hard-knock-life',15);}catch(e){}}
 function watchIntro(){gateStage=2;introOn=1;introT=0;introSong();}
 function endIntro(){introOn=0;gateStage=0;state='menu';showMenu();}
 function startIntro(direct){state='intro';gateStage=direct===true||(direct&&direct.type)?2:0;introOn=gateStage===2?1:0;introT=0;if(introOn)introSong();$('menu').classList.add('hide');$('msg').classList.add('hide');}
@@ -2891,6 +2891,8 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Enter'){if(t.value.trim()==='1019'){UNL=!UNL;applyLock();toast(UNL?'🔓 Everything unlocked!':'🔒 Locked again');renderPause();}t.value='';}
 },true);
 document.addEventListener('keyup',e=>{if(e.target.classList&&e.target.classList.contains('codein')&&e.key!=='Escape')e.stopPropagation();},true);
+/* phones: the code also works as soon as it is typed, no Enter needed */
+document.addEventListener('input',e=>{const t=e.target;if(!(t&&t.classList&&t.classList.contains('codein')))return;if(t.value.trim()==='1019'){UNL=!UNL;applyLock();toast(UNL?'🔓 Everything unlocked!':'🔒 Locked again');t.value='';t.blur();renderPause();}},true);
 
 /* ---------- turn 9: runner as a full mode ---------- */
 let STGV=false;
