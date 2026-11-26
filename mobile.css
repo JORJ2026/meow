@@ -457,3 +457,12 @@ button.b:active{transform:translateY(2px) scale(.98)}                           
 /* desktop mode: no on-screen thumb controls, the picture gets the whole screen */
 body.desk #deck{display:none!important}
 body.desk[data-o="l"] #stage{margin:0!important}
+
+/* desktop menus: visible keyboard focus, locked story levels (square edges) */
+#wm .b:focus-visible,#pause .b:focus-visible,#msg .b:focus-visible,#runsetup .b:focus-visible,#pause select:focus-visible{outline:3px solid #ffd84a;outline-offset:2px;border-radius:0}
+#wm .b.lk{opacity:.45}
+#wm .b.lk::before{content:'🔒 '}
+#edpick{max-width:220px;font:inherit;font-size:13px;padding:4px 6px;border-radius:0;border:2px solid #5b4aa8;background:#1d1745;color:#fff;vertical-align:middle}
+#wmcats{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:6px 0 2px;flex:0 0 auto}
+#wmcats button.b{padding:7px 12px;min-height:38px;font-size:14px;border-radius:0}
+#wmcats button.b.on{background:var(--gold);color:var(--ink)}

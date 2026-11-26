@@ -1,10 +1,10 @@
 html,body{margin:0;height:100%;overflow:hidden;background:#0b0820;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 canvas#c{display:block;position:fixed;inset:0;width:100vw;height:100dvh}
-#back{position:fixed;top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);color:#fff;border-radius:10px;text-decoration:none;font:700 18px system-ui;z-index:2}
-#hud{position:fixed;top:calc(10px + env(safe-area-inset-top));left:calc(10px + env(safe-area-inset-left));z-index:2;pointer-events:none;display:flex;flex-wrap:wrap;gap:6px;max-width:calc(100vw - 80px)}
-.pill{display:inline-block;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.22);color:#fff;font:800 clamp(13px,2.4vmin,18px) system-ui,sans-serif;white-space:nowrap}
+#back{position:fixed;top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);color:#fff;border-radius:0;text-decoration:none;font:700 18px system-ui;z-index:2}
+#hud{position:fixed;top:calc(10px + env(safe-area-inset-top));left:calc(10px + env(safe-area-inset-left));z-index:2;pointer-events:none;display:flex;flex-wrap:wrap;gap:6px;max-width:calc(100vw - 170px)}
+.pill{display:inline-block;padding:6px 12px;border-radius:0;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.22);color:#fff;font:800 clamp(13px,2.4vmin,18px) system-ui,sans-serif;white-space:nowrap}
 #bs{font-weight:700;opacity:.75}
-.side{position:fixed;z-index:2;width:84px;padding:6px 6px 8px;box-sizing:border-box;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:12px;color:#fff;font:800 11px system-ui,sans-serif;letter-spacing:1px;text-align:center;pointer-events:none}
+.side{position:fixed;z-index:2;width:84px;padding:6px 6px 8px;box-sizing:border-box;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:0;color:#fff;font:800 11px system-ui,sans-serif;letter-spacing:1px;text-align:center;pointer-events:none}
 .side canvas{display:block;width:72px;height:72px;margin:2px auto 0}
 #holdbox{left:calc(10px + env(safe-area-inset-left));top:calc(64px + env(safe-area-inset-top))}
 #nextbox{right:calc(10px + env(safe-area-inset-right));top:calc(64px + env(safe-area-inset-top))}

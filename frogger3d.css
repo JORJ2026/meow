@@ -13,6 +13,6 @@ html,body{margin:0;height:100%;background:#9fe0ff;overflow:hidden;font-family:sy
 #msg small{display:block;font-size:16px;opacity:.9;margin-top:6px;font-weight:700}
 #msg.hide{display:none}
 #msg .mbtn{display:flex;gap:8px;justify-content:center;margin-top:16px;pointer-events:auto}
-#msg .mbtn button{font:800 15px system-ui,sans-serif;padding:9px 16px;border:0;border-radius:999px;background:#fff;color:#1d3a5a;cursor:pointer}
+#msg .mbtn button{font:800 15px system-ui,sans-serif;padding:9px 16px;border:0;border-radius:0;background:#fff;color:#1d3a5a;cursor:pointer}
 #msg .mbtn button.on{background:#ffd84a}
-#back{position:fixed;left:12px;bottom:12px;color:#fff;background:rgba(20,40,70,.7);padding:8px 12px;border-radius:999px;text-decoration:none;font-weight:800;font-size:14px}
+#back{position:fixed;left:12px;bottom:12px;color:#fff;background:rgba(20,40,70,.7);padding:8px 12px;border-radius:0;text-decoration:none;font-weight:800;font-size:14px}

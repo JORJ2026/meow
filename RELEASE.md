@@ -48,3 +48,19 @@ Music: 19 MIDI songs in music/ play shuffled in every game; Hard Knock Life play
 ## 1.5.4
 - Desktop: Levels & worlds screen works with the arrow keys + Enter (Esc closes), a controller D-pad, and clicks on Story levels (locked ones show 🔒). The world map can be clicked to play a level, and the mouse wheel moves along it. Pause/menu cards also move with the arrow keys.
 - 1019 code: unlocks every level on every map (story map, Cat Run map, and the Temple / Maze / Pong / Pac / Tetris maps) and opens the level Editor. It now also works in the "🔑 Level code" box. The Editor has a list to jump straight to any level.
+
+## 1.5.5
+- Levels & worlds screen now opens on the world you picked (🏠 Classic, 🐱 Cat Worlds, 🌊 The River, 👑 Bosses) and only shows that category's maps, with buttons to switch or see 🌍 All. Cat Worlds and River levels start right away when tapped; their bosses unlock as you reach them (or with 1019).
+
+## 1.5.6
+- Pac 3D: the maze is alive. Walls rise out of the floor at the start, then a slow wave of height and colour rolls out from the dog house. Kibble bobs and spins, glowing rings pulse across the floor, a coloured light sweeps round, and marquee bulbs chase around the edge.
+- Pac 3D: animated scenery outside the grid for each of the 10 worlds (swaying palms and ruins, cacti and tumbleweeds, snowy pines and snowmen, lava pools and floating rocks, lollipops and balloons, glowing mushrooms, tombstones and floating ghosts, drifting clouds and sky islands, planets and satellites, coral, kelp and bubbles), plus critters circling the maze and falling or rising snow, embers, petals or bubbles. Visual only - the rules are unchanged.
+
+## 1.5.7
+- New shared overworld map and level select (owmap.js): an animated world map with a path, stars and a cat marker, a numbered level grid, world tabs, and keyboard, gamepad and touch support. Press M or tap 🗺 Map in a game to open it. The 1019 code unlocks every level, and the unlock now carries over from the main menu into the 3D games for the session.
+- Kitty Pac 3D: map and level select for all 100 mazes in 10 worlds. New win/lose cards.
+- Tetris 3D: 50 levels in 10 themed worlds. Each level has a line goal, a starting speed and garbage rows, and earns stars for speed. Easy/Normal/Hard difficulty and ∞ Endless. Each world adds animated scenery around the well: floating blocks, light pillars, a ground platform and themed objects (fish, trees, snow, balloons, towers, ghosts, planets and more).
+- Jewels 3D: 50 levels in 10 themed worlds, each a target score within a set number of moves. Star rating, ∞ Endless, and world colours on the sky and tray.
+- Cross Road 3D: the old level picker is replaced by the map (11 worlds, 55 levels). Stars come from lives left.
+- Pong 3D: 50 levels in 10 worlds, with difficulty rising smoothly. Stars come from points let in. Each world adds animated scenery around the table: a cheering crowd on bleachers, sweeping spotlights, bunting and themed objects.
+- Square corners on the HUD and buttons in the five 3D games.

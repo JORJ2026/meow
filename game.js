@@ -2571,8 +2571,8 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 /* ---------- turn 7: secret unlock, world menu, hover thumbnails ---------- */
-let UNL=false;try{localStorage.removeItem('catcousins_unlock');}catch(_){}
-function applyLock(){document.body.classList.toggle('locked',!UNL);if(!UNL&&ptab==='ed')ptab='kb';if(!UNL){if(grp===3)setGroup(0);try{if(RC.cat===3)RC.cat=0;}catch(_){}}if(typeof lgroups!=='undefined'&&lgroups.children[3])lgroups.children[3].classList.add('gated');}
+let UNL=false;try{localStorage.removeItem('catcousins_unlock');UNL=sessionStorage.getItem('cq_unl')==='1';}catch(_){}
+function applyLock(){try{if(UNL)sessionStorage.setItem('cq_unl','1');else sessionStorage.removeItem('cq_unl');}catch(_){}document.body.classList.toggle('locked',!UNL);if(!UNL&&ptab==='ed')ptab='kb';if(!UNL){if(grp===3)setGroup(0);try{if(RC.cat===3)RC.cat=0;}catch(_){}}if(typeof lgroups!=='undefined'&&lgroups.children[3])lgroups.children[3].classList.add('gated');}
 function menuGo(){UNL?playFree():startStory();}
 const THC={};
 function thumbCanvas(i){
@@ -2627,7 +2627,41 @@ function hoverThumb(el,i){el.addEventListener('mouseenter',e=>showThumb(i,e.clie
 /* world menu */
 let wmTab='story';
 const lvShort=i=>LEVEL_NAMES[i].replace(/^\d+ · /,'');
+let wmCat=-1;   /* -1 = all worlds; 0 Classic, 1 Cat Worlds, 2 The River, 3 Bosses (opens on the world picked on the pick sheet) */
+function wmCats(){
+  let c=$('wmcats');
+  if(!c){c=document.createElement('div');c.id='wmcats';$('wmtabs').after(c);
+    c.addEventListener('click',e=>{const x=e.target.closest('button[data-c]');if(!x)return;wmCat=+x.dataset.c;wmBuild();});}
+  c.innerHTML=GROUPS.map((G,g)=>'<button class="b'+(wmCat===g?' on':'')+'" data-c="'+g+'">'+G[0]+'</button>').join('')+'<button class="b'+(wmCat<0?' on':'')+'" data-c="-1">🌍 All</button>';
+  $('wmtabs').style.display=wmCat<0?'':'none';
+}
+function wmPlayDirect(g,lv){   /* Cat Worlds / The River / Classic Bonus: play that level straight away */
+  closeWM();try{document.getElementById('store').classList.add('hide');}catch(_){}
+  try{localStorage.setItem('cq_lv'+g,String(lv));}catch(_){}
+  audioInit();OWM='story';RUNNODE=null;RUN=false;story=false;lvIdx=lv;startLevel();
+}
+function wmBuildCat(){
+  const b=$('wmbody');b.innerHTML='';
+  const sec=(title,items)=>{const d=document.createElement('div');d.className='wsec';const h=document.createElement('h3');h.textContent=title;d.appendChild(h);
+    const r=document.createElement('div');r.className='wrow';
+    items.forEach(([i,label,boss,fn,lk])=>{const x=document.createElement('button');x.className='b'+(boss?' boss':'')+(lk?' lk':'');x.textContent=label;hoverThumb(x,i);x.onclick=()=>{if(lk){toast('🔒 Reach this level on the map first');return;}fn();};r.appendChild(x);});
+    d.appendChild(r);b.appendChild(d);};
+  const story=i=>()=>{wmTab='story';wmPick(i);};
+  const bossItem=(wi)=>[WORLDS[wi].boss,'👑 '+BOSS[wi][0],1,story(WORLDS[wi].boss),!wmReach(WORLDS[wi].boss)];
+  if(wmCat===0){
+    sec('WORLD 1 · '+WORLDS[0].name,WORLDS[0].lv.map((l,k)=>[l,(k+1)+'. '+lvShort(l),0,story(l),!wmReach(l)]).concat([bossItem(0)]));
+    sec('🏠 Classic Bonus',rg(CL0,CL0+45).map(i=>[i,LEVEL_NAMES[i],0,()=>wmPlayDirect(0,i)]));
+  }else if(wmCat===1||wmCat===2){
+    const w0=wmCat===1?1:11,ic=wmCat===1?'🐱':'🌊';
+    for(let wi=w0;wi<w0+10;wi++)sec(ic+' MAP '+(wi-w0+1)+' · '+WORLDS[wi].name,WORLDS[wi].lv.map((l,k)=>[l,(k+1)+'. '+lvShort(l),0,()=>wmPlayDirect(wmCat,l)]).concat([bossItem(wi)]));
+  }else{
+    sec('👑 Bosses',WORLDS.map((w,wi)=>bossItem(wi)));
+  }
+  b.scrollTop=0;
+}
 function wmBuild(){
+  wmCats();
+  if(wmCat>=0){wmBuildCat();return;}
   const b=$('wmbody');b.innerHTML='';
   document.querySelectorAll('#wmtabs button').forEach(x=>x.classList.toggle('on',x.dataset.t===wmTab));
   const sec=(title,items,sub)=>{
@@ -2658,7 +2692,7 @@ function wmPick(lv){
   if(window.cqStore){try{document.getElementById('store').classList.add('hide');}catch(_){}}
   enterNode(k);
 }
-function openWM(){wmTab=state==='world'?'story':wmTab;$('wm').classList.remove('hide');wmBuild();setTimeout(()=>{const f=document.querySelector('#wmbody button:not(.lk)')||document.querySelector('#wmbody button');if(f)f.focus({preventScroll:true});},30);}
+function openWM(){wmTab=state==='world'?'story':wmTab;wmCat=state==='world'?-1:(typeof grp==='number'?grp:-1);$('wm').classList.remove('hide');wmBuild();setTimeout(()=>{const f=document.querySelector('#wmbody button:not(.lk)')||document.querySelector('#wmbody button');if(f)f.focus({preventScroll:true});},30);}
 function closeWM(){$('wm').classList.add('hide');hideThumb();}
 $('wmbtn').onclick=openWM;$('wmclose').onclick=closeWM;
 document.querySelectorAll('#wmtabs button').forEach(x=>x.onclick=()=>{wmTab=x.dataset.t;wmBuild();});

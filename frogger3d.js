@@ -609,23 +609,28 @@ Z.spawnT=0;
 applyLook(Z.level);decorate();
 })();
 
-// ---------- continue / level picker ----------
-function levelPicker(){
-  const m=$('msg');m.classList.remove('hide');m.innerHTML='';Z.ready=1e9;
-  const t=document.createElement('div');t.textContent='Pick a level';t.style.fontSize='28px';m.appendChild(t);
-  const sm=document.createElement('small');sm.textContent='Cleared '+(PR.frog.at||0)+' / '+LEVELS+' \u00b7 themes unlock as you go';m.appendChild(sm);
-  const gr=document.createElement('div');gr.className='lgrid';
-  for(let L=1;L<=LEVELS;L++){const b=document.createElement('button');const ok=L<=(PR.frog.at||0)+1;b.textContent=ok?L:'\u{1F512}';b.disabled=!ok;
-    const th=themeOf(L);if(th){b.style.borderColor=th.grass;b.title=th.n;}
-    b.onclick=()=>{Z.score=0;Z.lives=3;startLevel(L);};gr.appendChild(b);}
-  m.appendChild(gr);
-  const row=document.createElement('div');row.className='mbtn';const bk=document.createElement('button');bk.textContent='Back';bk.onclick=()=>startScreen();row.appendChild(bk);m.appendChild(row);
-}
-function startScreen(){
-  const at=PR.frog.at||0;if(at<1)return;
-  Z.ready=1e9;showMsg('Cross Road 3D',(at>=LEVELS?'All cleared!':'Next: level '+(at+1)+' \u00b7 '+themeName(at+1)),
-    [['Continue',()=>{Z.score=0;Z.lives=3;startLevel(Math.min(LEVELS,at+1));},'on'],['New game',()=>newGame()],['Levels',levelPicker]]);
-}
+// ---------- overworld map + level select (owmap.js) ----------
+const FW=[{n:'Meadow',sky:'#bdf0ff',grass:'#7cd67a',deco:'🌼🐝🌳'}].concat(THEMES.map(t=>({n:t.n,sky:t.sky,grass:t.grass,deco:{cactus:'🌵🐪☀',pine:'🌲❄⛄',lolli:'🍭🍬🧁',rock:'🌋🔥🪨',dead:'👻🦇🌙',palm:'🌴🦜🐒',umbrella:'⛱🐚🌊',lamp:'🌃💡🎵',block:'🧸🚂🎈',star:'🌈⭐☁'}[t.tree]||'✨'})));
+PR.frog.st=PR.frog.st||{};
+function mapCfg(){return{title:'🐾 Cross Road 3D',
+  worlds:FW.map(t=>({n:t.n,c1:t.sky,c2:'#ffffff',g:t.grass,deco:t.deco})),
+  levels:w=>[1,2,3,4,5].map(k=>w*5+k),
+  name:L=>themeName(L),
+  isOpen:L=>L<=(PR.frog.at||0)+1,
+  stars:L=>PR.frog.st[L]||0,
+  cur:Math.min(LEVELS,Math.max(1,Z.over?Z.level:(Z.level||(PR.frog.at||0)+1))),
+  go:L=>{Z.score=0;Z.lives=3;startLevel(L);},
+  extra:[{label:'↺ New game',fn:()=>newGame()}],
+  onOpen:()=>{Z.ready=1e9;hideMsg();},
+  onClose:()=>{if(Z.ready>1e8){Z.ready=.6;}}};}
+function levelPicker(){const r=document.getElementById('cqres');if(r)r.remove();CQMap.open(mapCfg());}
+function startScreen(){const q=+new URLSearchParams(location.search).get('level');if(q>=1&&q<=LEVELS)return;levelPicker();}
+{const _lc=levelClear;levelClear=function(){const st=Z.lives>=3?3:Z.lives===2?2:1;PR.frog.st=PR.frog.st||{};PR.frog.st[Z.level]=Math.max(PR.frog.st[Z.level]||0,st);_lc();
+   if(Z.over==='win'){hideMsg();CQMap.result({title:'All 55 roads crossed! 🥣',sub:'Score '+Z.score,stars:st,retry:()=>newGame(),map:levelPicker});}};
+ const _go=gameOver;gameOver=function(){_go();hideMsg();const L=Z.level;
+   CQMap.result({title:Z.dead&&Z.dead.kind==='drown'?'Splash! 💦':'Squished! 🚗',sub:themeName(L)+'\n⭐ '+Z.score,retry:()=>{Z.score=0;Z.lives=3;startLevel(L);},map:levelPicker});};}
+CQMap.button(levelPicker,{style:'top:auto;bottom:12px;right:auto;left:50%;transform:translateX(-50%)'});
+addEventListener('keydown',e=>{if(e.code==='KeyM'&&!CQMap.isOpen()){e.preventDefault();levelPicker();}},true);
 startScreen();
 try{const q=+new URLSearchParams(location.search).get('level');if(q>=1&&q<=LEVELS){Z.score=0;Z.lives=3;startLevel(q);}}catch(_){}
 

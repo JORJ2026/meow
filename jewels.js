@@ -496,3 +496,61 @@ ambient=function(dt,t){_amb(dt,t);
  moon.position.y=8+Math.sin(t*.05)*.5;moon.rotation.y+=dt*.04;moonGlow.position.copy(moon.position);rays.position.copy(moon.position);
 };
 })();}catch(err){console.warn('background pass 2 skipped',err);}
+
+/* ===== levels (score target in N moves), overworld map, world themes ===== */
+try{(()=>{
+const CQ=window.CQMap;if(!CQ)return;
+const JW=[
+ {n:'Moonlit Meadow', sky:['#2c1878','#170c42','#0a0522'],fog:'#0b0820',tray:'#8a5cff',g:'#3a7a4a',deco:'🌙🌼✨'},
+ {n:'Fishbowl Bay',   sky:['#2a8ad0','#124a8a','#06203a'],fog:'#0a2240',tray:'#46c0ff',g:'#2a6a9a',deco:'🐟🐚🌊'},
+ {n:'Yarn Gardens',   sky:['#3aa070','#1a5a3a','#082a1a'],fog:'#0a2a1a',tray:'#ff8fd6',g:'#3a8a4a',deco:'🧶🌷🌳'},
+ {n:'Frosty Peaks',   sky:['#7ab8f0','#3a5a9a','#141e40'],fog:'#162246',tray:'#a8e0ff',g:'#cfe6ff',deco:'❄⛄🏔'},
+ {n:'Candy Castle',   sky:['#ff9ad0','#b05aa8','#3a1a5a'],fog:'#3a1a4a',tray:'#ff6fb5',g:'#ff8fc8',deco:'🍭🏰🍬'},
+ {n:'Golden Dunes',   sky:['#ffb04a','#c0503a','#3a1a2a'],fog:'#3a1a26',tray:'#ffc66b',g:'#e0a050',deco:'🌵🐪☀'},
+ {n:'Coral Kingdom',  sky:['#2ad0c0','#127a8a','#042a3a'],fog:'#062a38',tray:'#ff6f61',g:'#e0c890',deco:'🐠🪸🐙'},
+ {n:'Neon Alley',     sky:['#ff3ab0','#3a1a8a','#08051a'],fog:'#100828',tray:'#3ae0ff',g:'#3a2a6a',deco:'🌃🎵💡'},
+ {n:'Spooky Manor',   sky:['#5a2a7a','#22123a','#08040e'],fog:'#120a1e',tray:'#9fe870',g:'#4a2d63',deco:'👻🕯🦇'},
+ {n:'Star Palace',    sky:['#4a1aa0','#120a40','#000008'],fog:'#05031a',tray:'#ffd84a',g:'#46e0ff',deco:'🪐⭐👑'}];
+const JSN=['Sparkle','Twinkle','Dazzle','Glitter','Crown'];
+const NL=50,jName=i=>JW[Math.floor(i/5)].n+' '+(i%5+1)+' · '+JSN[i%5];
+const JP=(()=>{try{return JSON.parse(localStorage.getItem('cj-prog')||'null')||{at:0,st:{}};}catch(e){return{at:0,st:{}};}})();JP.st=JP.st||{};
+const saveJP=()=>{try{localStorage.setItem('cj-prog',JSON.stringify(JP));}catch(e){}};
+const QS=new URLSearchParams(location.search),ENDLESS=QS.get('endless')==='1';
+let L=parseInt(QS.get('L'));if(!(L>=0&&L<NL))L=Math.min(NL-1,JP.at||0);
+const w=Math.floor(L/5),s=L%5;
+const MOVES=22-Math.floor(w/3)-(s===4?2:0),TARGET=500+s*120+w*90+(s===4?200:0);
+let moves=MOVES,moved=false,ended=false,paused=false;
+const goL=i=>{location.href='jewels.html?L='+i;};
+// theme
+const TH=JW[ENDLESS?Math.floor(Math.random()*10):w];
+scene.background=gradTex([[0,TH.sky[0]],[.55,TH.sky[1]],[1,TH.sky[2]]]);if(scene.fog)scene.fog.color.set(TH.fog);
+trayMat.emissive.set(TH.tray);trayMat.emissiveIntensity=.22;
+// HUD
+const mv=document.createElement('span');mv.className='pill';mv.id='mv';const tg=document.createElement('span');tg.className='pill';tg.id='tg';
+if(!ENDLESS){$('hud').insertBefore(tg,$('cb'));$('hud').insertBefore(mv,$('cb'));}
+(function hud(){if(!ENDLESS){mv.textContent='👆 '+moves;tg.textContent='🎯 '+Math.min(score,TARGET)+'/'+TARGET;mv.style.color=moves<=3?'#ff8f8f':'';}requestAnimationFrame(hud);})();
+// count moves: a swap that matches
+const _ts=trySwap;
+trySwap=function(a,b){if(paused||ended||CQ.isOpen())return;_ts(a,b);if(!ENDLESS&&state==='fall'){moves--;moved=true;}};
+// win / lose once the board settles
+const _up=update;
+update=function(dt){if(paused||CQ.isOpen())return;_up(dt);
+  if(ENDLESS||ended||!moved||state!=='idle')return;
+  if(score>=TARGET){ended=true;const st=score>=TARGET*1.5||moves>=6?3:score>=TARGET*1.2||moves>=3?2:1;
+    JP.st[L]=Math.max(JP.st[L]||0,st);JP.at=Math.max(JP.at,L+1);saveJP();say('LEVEL CLEAR! 💎','#ffd84a');
+    setTimeout(()=>CQ.result({title:'Level clear! 💎',sub:jName(L)+'\n🐾 '+score+' · '+moves+' moves left',stars:st,next:L<NL-1?()=>goL(L+1):null,retry:()=>goL(L),map:openMap}),1100);}
+  else if(moves<=0){ended=true;say('OUT OF MOVES','#ff8f8f');
+    setTimeout(()=>CQ.result({title:'Out of moves 😿',sub:jName(L)+'\n🐾 '+score+' / '+TARGET,retry:()=>goL(L),map:openMap}),900);}
+};
+function mapCfg(){return{title:'💎 Kitty Jewels 3D',
+  worlds:JW.map(t=>({n:t.n,c1:t.sky[0],c2:t.sky[1],g:t.g,deco:t.deco})),
+  levels:k=>[0,1,2,3,4].map(j=>k*5+j),name:i=>{const a=Math.floor(i/5),b=i%5;return jName(i)+' — '+(500+b*120+a*90+(b===4?200:0))+' in '+(22-Math.floor(a/3)-(b===4?2:0));},
+  isOpen:i=>i<=JP.at,stars:i=>JP.st[i]||0,cur:L,
+  go:i=>{if(i===L&&!ENDLESS&&!moved&&!ended){paused=false;return;}goL(i);},
+  extra:[{label:'∞ Endless',fn:()=>{location.href='jewels.html?endless=1';}}],
+  onOpen:()=>{paused=true;},onClose:()=>{paused=false;}};}
+function openMap(){const r=document.getElementById('cqres');if(r)r.remove();CQ.open(mapCfg());}
+CQ.button(openMap);
+addEventListener('keydown',e=>{if(e.code==='KeyM'&&!CQ.isOpen()){e.preventDefault();openMap();}},true);
+if(!ENDLESS){say((L+1)+'. '+JSN[s]+' — '+TARGET+' 🎯','#ffd84a');if(!QS.has('L'))setTimeout(openMap,60);}
+})();}catch(err){console.warn('levels pass skipped',err);}
