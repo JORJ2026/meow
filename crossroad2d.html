@@ -6,13 +6,17 @@
 <meta name="theme-color" content="#1d1745">
 <title>Cross Road 2D</title>
 <link rel="stylesheet" href="crossroad2d.css">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="color-scheme" content="dark">
 </head>
 <body>
 <canvas id="cv" aria-label="Cross Road 2D game board" role="img"></canvas>
 
 <div id="hud" hidden>
   <div class="hp"><b id="hlv">Level 1</b><small id="hwn"></small></div>
-  <div class="hp mid"><span id="hfish">🐟 0</span><span id="hlives">❤️❤️❤️</span></div>
+  <div class="hp mid"><span id="htime">⏱ 0s</span><span id="hfish">🐟 0</span><span id="hlives">❤️❤️❤️</span></div>
   <div class="hbtns"><button id="bmute" aria-label="Sound">🔊</button><button id="bpause" aria-label="Pause">❚❚</button></div>
   <div id="prog"><i id="progf"></i></div>
 </div>
@@ -37,6 +41,8 @@
 
 <div id="msg" class="ov hide" role="dialog" aria-modal="true"><div class="card"><h2 id="mt"></h2><p id="ms"></p><div id="mstars"></div><div class="row" id="mb"></div></div></div>
 
+<script>window.CQ_MUSIC_NOBTN=1;</script>
+<script src="midi.js"></script>
 <script src="crossroad2d.js"></script>
 </body>
 </html>

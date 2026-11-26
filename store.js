@@ -15,7 +15,8 @@
     { id: 'pac3d', name: 'Pac 3D', blurb: 'Kibble maze in 3D', icon: '🐾', img: 'img/prev/pac3d.webp' },
     { id: 'frog3d', name: 'Cross Road 3D', blurb: '55 levels in 10 themed worlds', icon: '🚗', img: 'img/prev/frog3d.webp', href: 'frogger3d.html' },
     { id: 'cross2d', name: 'Cross Road 2D', blurb: '50 levels · roads, rails, rivers', icon: '🛣️', img: 'img/prev/cross2d.webp', href: 'crossroad2d.html' },
-    { id: 'inkbound', name: 'Inkbound', blurb: 'Classic-cartoon platform fighter', icon: '🖋️', img: 'img/prev/inkbound.webp', href: 'inkbound/index.html' }
+    { id: 'inkbound', name: 'Inkbound', blurb: 'Classic-cartoon platform fighter', icon: '🖋️', img: 'img/prev/inkbound.webp', href: 'inkbound/index.html' },
+    { id: 'elkriver', name: 'Elk River Bandit', blurb: 'Raccoon trash bandit · run, jump, spell', icon: '🦝', img: 'img/prev/elkriver.webp', href: 'elkriver/index.html' }
   ];
   const $ = id => document.getElementById(id);
   const store = $('store'), menu = $('menu');

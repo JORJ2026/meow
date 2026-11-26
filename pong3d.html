@@ -1,7 +1,13 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="theme-color" content="#120d30"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Cat Pong 3D</title><link rel="stylesheet" href="pong3d.css"><link rel="stylesheet" href="polish3d.css">
+<title>Cat Pong 3D</title><link rel="stylesheet" href="pong3d.css"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="color-scheme" content="dark">
+<link rel="stylesheet" href="polish3d.css">
 </head>
 <body>
 <canvas id="c"></canvas>
@@ -10,6 +16,7 @@
 <a id="back" href="index.html" aria-label="Menu">⌂</a>
 <div id="say"></div>
 <div id="over" class="hide"><div class="ttl" id="ttl"></div><div id="btns"></div></div>
+<script src="midi.js"></script>
 <script src="polish3d.js"></script>
 <script type="module" src="pong3d.js"></script>
 </body></html>

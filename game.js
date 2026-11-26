@@ -1618,7 +1618,9 @@ function openWorld(){
   if(OW.u>maxU)OW.u=maxU;
   OW.cam=owPos(OW.u)[0]-VW/2;
 }
-function startStory(){OWM='story';RUN=false;RUNNODE=null;audioInit();if(!S.story||S.story.at==null)S.story={at:0};storyIdx=Math.min(S.story.at,SEQ.length-1);
+// Cat Worlds and The River (picked on the pick sheet) play their own levels directly, continuing where you left off
+function playWorld(g){const set=GROUPS[g][1];let i=+localStorage.getItem('cq_lv'+g);if(!set.includes(i))i=set[0];audioInit();OWM='story';RUNNODE=null;RUN=false;story=false;lvIdx=i;startLevel();}
+function startStory(){if(grp===1||grp===2){playWorld(grp);return;}OWM='story';RUN=false;RUNNODE=null;audioInit();if(!S.story||S.story.at==null)S.story={at:0};storyIdx=Math.min(S.story.at,SEQ.length-1);
   // world chosen on the pick sheet: jump the map cursor to the furthest reachable level of that world
   if(grp>0&&typeof GROUPS!=='undefined'){const set=GROUPS[grp][1];let best=-1,first=-1;for(let i=0;i<SEQ.length;i++)if(set.includes(SEQ[i].lv)){if(first<0)first=i;if(i<=S.story.at)best=i;}
     if(best>=0)storyIdx=best;else if(first>=0)setTimeout(()=>toast('🔒 '+GROUPS[grp][0].replace(/^\S+ /,'')+' opens at level '+(first+1)+' on the map'),300);}
@@ -1746,6 +1748,7 @@ function edClick(a,b){
 let introOn=0, introT=0;
 const IM_MEL=[523,0,659,0,784,0,659,0,698,0,880,0,698,0,587,0,523,0,659,0,784,1047,784,659,698,587,659,523,392,0,523,0];
 function introMusic(t){
+  return;   /* the intro now plays the Hard Knock Life midi (music/) */
   if(!introOn||t%11!==0)return;
   const s=(t/11)|0,i=s%32;
   const m=IM_MEL[i];
@@ -1760,9 +1763,10 @@ function introPress(){
   if(introT>45)endIntro();
 }
 let gateStage=0;
-function watchIntro(){gateStage=2;introOn=1;introT=0;}
+function introSong(){try{window.CQMidi&&CQMidi.play('hard-knock-life');}catch(e){}}
+function watchIntro(){gateStage=2;introOn=1;introT=0;introSong();}
 function endIntro(){introOn=0;gateStage=0;state='menu';showMenu();}
-function startIntro(direct){state='intro';gateStage=direct===true||(direct&&direct.type)?2:0;introOn=gateStage===2?1:0;introT=0;$('menu').classList.add('hide');$('msg').classList.add('hide');}
+function startIntro(direct){state='intro';gateStage=direct===true||(direct&&direct.type)?2:0;introOn=gateStage===2?1:0;introT=0;if(introOn)introSong();$('menu').classList.add('hide');$('msg').classList.add('hide');}
 function introDot(t){
   if(t<150)return [820,370,0];
   if(t<330){const a=(t-150)*0.045;return [400+Math.cos(a)*250,380+Math.sin(a*2)*30,1];}
@@ -1974,7 +1978,7 @@ const keys={l:0,r:0,j:0,a:0,s:0}; let jPress=0,aPress=0;
 function setKey(k,v){ if(k==='j'&&v&&!keys.j)jPress=1; if(k==='a'&&v&&!keys.a)aPress=1; keys[k]=v; }
 const DEF={kb:{l:['ArrowLeft','KeyA',''],r:['ArrowRight','KeyD',''],j:['ArrowUp','Space','KeyW'],a:['ArrowDown','KeyX','KeyS']},gp:{j:0,a:2,dz:0.3},ph:{show:'auto',size:1,lh:false,op:1,vib:true},maps:{},story:{at:0}};
 let S=JSON.parse(JSON.stringify(DEF));
-try{const sv=JSON.parse(localStorage.getItem('catcousins_cfg')||'null');if(sv){for(const g in DEF)Object.assign(S[g],sv[g]||{});}}catch(_){}
+try{const sv=JSON.parse(localStorage.getItem('catcousins_cfg')||'null');if(sv){for(const g in DEF)Object.assign(S[g],sv[g]||{});for(const g in sv)if(!(g in DEF)&&sv[g]&&typeof sv[g]==='object')S[g]=sv[g];}}catch(_){}
 function saveS(){try{localStorage.setItem('catcousins_cfg',JSON.stringify(S));}catch(_){}}
 let KM={};
 function buildKM(){KM={};for(const a in S.kb)S.kb[a].forEach(c=>{if(c)KM[c]=a;});}
@@ -2247,7 +2251,8 @@ function win(){
     if(story){ if(storyIdx>=S.story.at){S.story.at=Math.min(SEQ.length,storyIdx+1);saveS();} const fin=storyIdx>=SEQ.length-1; showMsg(fin?'You saved the whole valley! 🏆':(SEQ[storyIdx].boss?'BOSS DEFEATED! 👑':'Level clear! 🎉'),'🐟 '+got+' / '+tot+'   🥫 '+P.tins,[['Back to the map ▶',openWorld,'on'],['Replay',startLevel]]); return; }
     const next=lvIdx<LEVELS.length-1;
     const btns=[];
-    if(next)btns.push(['Next level ▶',()=>{lvIdx++;startLevel();},'on']);
+    { const set=(typeof GROUPS!=='undefined'&&GROUPS[grp])?GROUPS[grp][1]:null,k=set?set.indexOf(lvIdx):-1,nx=set&&k>=0?set[k+1]:lvIdx+1;   // next level stays inside the chosen world
+      if(nx!=null&&nx<LEVELS.length)btns.push(['Next level ▶',()=>{lvIdx=nx;try{localStorage.setItem('cq_lv'+grp,String(nx));}catch(_){}startLevel();},'on']); }
     btns.push(['Replay',startLevel]); btns.push(['Menu',showMenu]);
     showMsg(next?'Level clear! 🎉':'You beat the game! 🏆','🐟 '+got+' / '+tot+'   🥫 '+P.tins+'   '+'★'.repeat(stars)+'☆'.repeat(3-stars),btns);
   },900);
@@ -2501,7 +2506,8 @@ function swPaint(){if(swLast===sel)return;swLast=sel;const g=swC.getContext('2d'
   const sc=84/Math.max(c.w,c.h)/SPR/1.0,w=c.w*SPR*sc,h=c.h*SPR*sc;try{drawCat(g,c,62-w/2,66-h/2,w,h,1,0,{});}catch(_){}}
 swB.onclick=e=>{switchChar();swPaint();swB.blur();};
 setInterval(()=>{document.body.classList.toggle('inmenu',!((state==='play'||state==='dead'||state==='win'||state==='temple'||state==='maze'||state==='tpwin'||state==='mzwin'||state==='pong'||state==='pac'||state==='pgwin'||state==='pcwin'||state==='tet'||state==='ttwin')&&!paused&&$('menu').classList.contains('hide')));document.body.classList.toggle('inworld',state==='world');swPaint();swB.style.display=((state==='play'||state==='dead'||state==='win')&&!!P)?'block':'none';},200);
-document.getElementById('mute').onclick=e=>{audioInit();muted=!muted;e.target.textContent=muted?'🔇':'🔊';};
+document.getElementById('mute').onclick=e=>{audioInit();muted=!muted;e.target.textContent=muted?'🔇':'🔊';try{CQMidi.mute(muted);}catch(x){}};
+try{if(window.CQMidi&&CQMidi.muted()){muted=true;document.getElementById('mute').textContent='🔇';}}catch(e){}
 function drawCards(){
   drawRunIcon();
   const K=Math.min(3,Math.ceil((window.devicePixelRatio||2)*1.2));

@@ -1,4 +1,4 @@
-import * as THREE from 'https://esm.sh/three@0.160.0';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 import { makeCat, makeDog, selectedCat } from './char3d.js';
 const $=id=>document.getElementById(id);
 const COLS=10,ROWS=20,FOV=40,SCORE=[0,100,300,500,800];

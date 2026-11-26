@@ -114,8 +114,9 @@ function tone(f, d, ty, v, sl) {
   } catch (_) {}
 }
 const sfx = {
-  hop: () => tone(440 + Math.random() * 60, .07, 'square', .035, 160), coin: () => { tone(988, .08, 'square', .04); setTimeout(() => tone(1319, .12, 'square', .04), 70); },
+  hop: () => tone(440 + (G ? G.maxR / G.rows * 220 : 0) + Math.random() * 60, .07, 'square', .035, 160), coin: () => { tone(988, .08, 'square', .04); setTimeout(() => tone(1319, .12, 'square', .04), 70); },
   splat: () => tone(120, .25, 'sawtooth', .07, -80), splash: () => tone(300, .3, 'sine', .06, -220), bell: () => tone(1240, .09, 'triangle', .05),
+  whoosh: () => tone(700, .18, 'sawtooth', .025, -500), honk: () => { tone(330, .12, 'square', .04); setTimeout(() => tone(330, .16, 'square', .04), 150); }, caw: () => tone(1500, .2, 'sawtooth', .03, -700), slide: () => tone(900, .2, 'sine', .03, -600),
   win: () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, .16, 'square', .05), i * 110)), bump: () => tone(160, .08, 'square', .04)
 };
 const vib = n => { if (!SV.mute && navigator.vibrate) try { navigator.vibrate(n); } catch (_) {} };
@@ -127,7 +128,7 @@ function resize() {
   const W = innerWidth, H = innerHeight, land = W > H * 1.05;
   document.body.dataset.o = land ? 'l' : 'p';
   const deckH = (!land && matchMedia('(pointer:coarse)').matches) ? 150 + (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sab')) || 0) : 0;
-  CW = W; CH = Math.max(200, H - deckH); DPR = Math.min(devicePixelRatio || 1, 2.5);
+  CW = W; CH = Math.max(200, H - deckH); DPR = Math.min(devicePixelRatio || 1, LOWP ? 1 : 2.5);
   cv.style.width = CW + 'px'; cv.style.height = CH + 'px'; cv.width = Math.round(CW * DPR); cv.height = Math.round(CH * DPR);
   U = Math.floor(Math.min(CW / COLS, CH / (land ? 8.5 : 10.5)));        // tile size in CSS px
   OX = Math.floor((CW - COLS * U) / 2);
@@ -136,7 +137,8 @@ function resize() {
 addEventListener('resize', resize);
 
 /* ---------- game state ---------- */
-let G = null;               // current level state
+let G = null, LOWP = !!(navigator.connection && navigator.connection.saveData);
+if (navigator.getBattery) navigator.getBattery().then(b => { if (!b.charging && b.level < .2) { LOWP = true; resize(); } }).catch(() => {});               // current level state
 const P = { x: 3, r: 0, hx: 3, hr: 0, tx: 3, tr: 0, hop: 1, face: 1, riding: null, slide: 0, alive: 1, face_d: 0, sq: 0, blink: 0, idle: 0, bump: 0 };
 let parts = [], pops = [], shake = 0, flash = 0, fade = 0, camR = 0, camTgt = 0, clock = 0, paused = false, last = 0, hawk = null, clouds = [];
 const HOP = .12;
@@ -149,14 +151,14 @@ function startLevel(L) {
   camR = camTgt = camClamp(0); hawk = null; parts = []; pops = []; PRT.length = 0; newClouds();
   for (let i = 0; i < 40; i++) PRT.push({ x: Math.random() * COLS * 1.4 - .7, y: Math.random() * 20, vx: 0, vy: 0, p: Math.random() * 6, s: .6 + Math.random() * .8 });
   $('title').classList.add('hide'); $('msg').classList.add('hide'); $('hud').hidden = false; resize();
-  $('hlv').textContent = 'Level ' + L + ' / ' + LEVELS; $('hwn').textContent = G.title; updHud();
+  $('hlv').textContent = 'Level ' + L + '/' + LEVELS; $('hwn').textContent = G.title; updHud();
   const b = $('banner'); b.innerHTML = G.th.n + '<small>Level ' + L + ' · ' + NAMES5[G.j] + '</small>'; b.classList.remove('on'); void b.offsetWidth; b.classList.add('on');   // V34
   fade = 1;                                                                                       // V35
   if (L === 1 && !SV.coached) { const c = document.createElement('div'); c.id = 'coach'; c.innerHTML = '👆 <b>Tap or swipe up</b> to hop<br><small>swipe sideways to dodge · reach the 🥣 bowl</small>'; document.body.appendChild(c); SV.coached = 1; save(); const kill = () => { c.classList.add('out'); setTimeout(() => c.remove(), 400); removeEventListener('pointerdown', kill); }; setTimeout(() => addEventListener('pointerdown', kill), 300); setTimeout(kill, 6000); }
   paused = false;
 }
 function updHud() { /* V33: HUD pills, hearts and the progress bar to the bowl */
-  $('hfish').textContent = '🐟 ' + G.fish + '/' + G.fishTotal; $('hlives').textContent = '❤️'.repeat(Math.max(0, G.lives)) + '🖤'.repeat(Math.max(0, 3 - G.lives));
+  $('hfish').textContent = '🐟 ' + G.fish + '/' + G.fishTotal; $('hlives').textContent = '❤️'.repeat(Math.max(0, G.lives)) + '🖤'.repeat(Math.max(0, 3 - G.lives)); $('hlives').classList.toggle('last', G.lives === 1);
   $('progf').style.width = Math.round(G.maxR / (G.rows - 1) * 100) + '%';
 }
 
@@ -197,22 +199,23 @@ function tryHop(dx, dr) {
 }
 function startHop(nx, nr, dx) {
   P.hx = P.x; P.hr = P.r; P.tx = nx; P.tr = nr; P.hop = 0; P.riding = null; P.slide = (dx !== 0 && laneAt(nr).type === 'ice') ? dx : 0;
-  if (dx) P.face = dx; P.idle = 0; G.hops++; sfx.hop(); P.sq = 1; if (hawk) hawk = null;
+  if (dx) P.face = dx; P.idle = 0; G.hops++; sfx.hop(); vib(4); P.sq = 1; if (hawk) hawk = null;
 }
 function land() {
   P.x = P.tx; P.r = P.tr; P.hop = 1; P.sq = -1;
   const ln = laneAt(P.r);
   // V23: dust puffs on landing
   for (let i = 0; i < 5; i++) addP(P.x + .5, P.r + .15, (Math.random() - .5) * 1.4, Math.random() * .8, .35, ln.type === 'river' ? '#ffffff' : '#fff6d8', 'dust');
+  if (G.th.part === 'snow' && (ln.type === 'grass' || ln.type === 'ice')) { (G.prints || (G.prints = [])).push([P.x + .5, P.r + .2, P.face]); if (G.prints.length > 14) G.prints.shift(); }
   if (P.r > G.maxR) { G.maxR = P.r; updHud(); }
   if (ln.type === 'grass' || ln.type === 'ice') { G.cp = P.r; }
   if (ln.type === 'grass' || ln.type === 'ice' || ln.type === 'goal') P.x = Math.round(P.x) === P.x ? P.x : (P.slide ? P.x : P.x);
   if (ln.type === 'river') {
     const hit = ln.objs.find(o => !(o.k === 'turtle' && turtleDown(o, G.t)) && Math.abs(objCenter(ln, o) + (o.w / 2 - o.w / 2) - (P.x + .5)) < o.w / 2 + .2);
-    if (hit) { P.riding = { o: hit, off: (P.x + .5) - objCenter(ln, hit) }; } else return die('water');
+    if (hit) { P.riding = { o: hit, off: (P.x + .5) - objCenter(ln, hit) }; addRing(P.x + .5, P.r + .45); } else return die('water');
   } else if (ln.type === 'ice' && P.slide) {
     const nx = P.x + P.slide;
-    if (nx >= 0 && nx <= COLS - 1 && !ln.obs.some(o => o.c === Math.round(nx))) { P.tx = nx; P.tr = P.r; P.hx = P.x; P.hr = P.r; P.hop = 0; P.hopSlide = 1; return; }
+    if (nx >= 0 && nx <= COLS - 1 && !ln.obs.some(o => o.c === Math.round(nx))) { sfx.slide(); P.tx = nx; P.tr = P.r; P.hx = P.x; P.hr = P.r; P.hop = 0; P.hopSlide = 1; return; }
     P.slide = 0;
   }
   for (const f of ln.fish) if (!f.got && Math.abs(f.c - Math.round(P.x)) < .6) { f.got = 1; G.fish++; popTxt('+10', P.x + .5, P.r + 1, '#ffd84a'); sfx.coin(); vib(8); updHud(); for (let i = 0; i < 8; i++) addP(f.c + .5, P.r + .5, (Math.random() - .5) * 3, Math.random() * 2.5, .5, '#ffd84a', 'spark'); }
@@ -221,7 +224,7 @@ function land() {
 }
 function die(kind) {
   if (!P.alive || G.state !== 'play') return;
-  P.alive = 0; G.state = 'dead'; G.dt = 0; G.lives--; G.lost++; G.kind = kind; shake = .6; flash = 1; vib([40, 30, 40]);
+  P.alive = 0; G.state = 'dead'; G.slow = .35; G.dt = 0; G.lives--; G.lost++; G.kind = kind; shake = .6; flash = 1; vib([40, 30, 40]);
   P.riding = null;
   if (kind === 'water') { sfx.splash(); for (let i = 0; i < 16; i++) addP(P.x + .5, P.r + .5, (Math.random() - .5) * 4, 1.5 + Math.random() * 3, .7, '#cfeeff', 'drop'); addRing(P.x + .5, P.r + .5); }  // V17
   else if (kind === 'train') { sfx.splat(); for (let i = 0; i < 14; i++) addP(P.x + .5, P.r + .5, (Math.random() - .5) * 6, Math.random() * 3, .7, '#ff8fa3', 'spark'); }
@@ -233,6 +236,7 @@ function respawn() {
   const ln = laneAt(P.r); if (ln.obs && ln.obs.some(o => o.c === 3)) { const f = ln.free[0]; P.x = P.tx = P.hx = f; }
 }
 function win() {
+  G.time = G.t; const bt = (SV.best || (SV.best = {}))[G.L]; G.newBest = !bt || G.time < bt; if (G.newBest) SV.best[G.L] = Math.round(G.time * 10) / 10;
   G.state = 'win'; G.dt = 0; const L = G.L, noLoss = G.lost === 0, many = G.fishTotal === 0 || G.fish >= Math.ceil(G.fishTotal * .6), stars = 1 + (noLoss ? 1 : 0) + (many ? 1 : 0);
   sfx.win(); vib([30, 40, 30]);
   for (let i = 0; i < 60; i++) addP(laneAt(G.rows - 1).bowl + .5, G.rows - .5, (Math.random() - .5) * 8, 2 + Math.random() * 6, 1.4, ['#ffd84a', '#ff77b7', '#6ee7ff', '#9fe870', '#c08bff'][i % 5], 'conf'); // V28
@@ -247,6 +251,7 @@ function popTxt(s, x, y, c) { pops.push({ s, x, y, c, l: 0 }); }   // V27
 
 /* ---------- update ---------- */
 function update(dt) {
+  if (G && G.slow > 0) { G.slow -= dt; dt *= .3; }
   clock += dt;
   if (!G || paused) return;
   if (G.state === 'play' || G.state === 'dead' || G.state === 'win') G.t += dt;
@@ -263,7 +268,7 @@ function update(dt) {
       if (ln.type === 'belt') { P.x += ln.speed * dt; if (P.x < -.5 || P.x > COLS - .5) die('carried'); }
       else if (ln.type === 'grass' || ln.type === 'ice') { const tx = Math.round(P.x); P.x += (tx - P.x) * Math.min(1, dt * 14); }
       P.idle += dt;
-      if (G.L >= 6 && !hawk && P.idle > 5.5 && P.r < G.rows - 1) hawk = { t: 0 };   // V36
+      if (G.L >= 6 && !hawk && P.idle > 5.5 && P.r < G.rows - 1) { hawk = { t: 0 }; sfx.caw(); }   // V36, X4 hawk cry
       if (hawk) { hawk.t += dt; if (hawk.t > 2.2) { die('hawk'); hawk = null; } }
     }
     // hazards: cars, trains, dogs (continuous, uses the cat's interpolated position)
@@ -271,13 +276,13 @@ function update(dt) {
     for (const r of [Math.floor(cr + .3), Math.ceil(cr - .3)]) {
       const ln = G.lanes[r]; if (!ln) continue;
       if (Math.abs(r - cr) > .7) continue;
-      if (ln.type === 'road') for (const o of ln.objs) { if (Math.abs(objCenter(ln, o) - cx) < o.w / 2 + .22) { die('car'); break; } }
+      if (ln.type === 'road') for (const o of ln.objs) { const gap = Math.abs(objCenter(ln, o) - cx) - o.w / 2; if (gap < .22) { die('car'); break; } if (gap < .5 && Math.abs(r - cr) < .3 && !o.nm) { o.nm = 1; setTimeout(() => o.nm = 0, 1500); if (P.alive && G.state === 'play') popTxt('close!', cx - .5, r + 1.2, '#ff9fd0'); sfx.whoosh(); } }
       if (ln.type === 'rail') { const ts = trainState(ln); if (ts.x0 !== null && cx > ts.x0 - .1 && cx < ts.x1 + .1) die('train'); }
       if (ln.type === 'river' && P.hop >= 1 && !P.riding) die('water');
     }
     for (const dg of G.dogs) if (Math.abs(dg.r - cr) < .6 && Math.abs(dg.x + .5 - cx) < .55) die('dog');
     // rail bells while warning
-    for (const l of G.lanes) if (l.type === 'rail') { const ts = trainState(l); if (ts.warn && Math.abs(l.r - P.r) < 8 && Math.floor(G.t * 6) !== Math.floor((G.t - dt) * 6)) sfx.bell(); }
+    for (const l of G.lanes) if (l.type === 'rail') { const ts = trainState(l); if (ts.k >= 0 && ts.k < .05 && !l.honked && Math.abs(l.r - P.r) < 6) { l.honked = 1; sfx.honk(); } if (ts.k < 0) l.honked = 0; if (ts.warn && Math.abs(l.r - P.r) < 8 && Math.floor(G.t * 6) !== Math.floor((G.t - dt) * 6)) sfx.bell(); }
     camTgt = camClamp(P.r + (P.hop < 1 ? (P.tr - P.r) * P.hop : 0) + 2.2);  // V32: look-ahead
   } else if (G.state === 'dead') {
     G.dt += dt; if (G.dt > .9) { if (G.lives <= 0) { G.state = 'over'; showLose(); } else { respawn(); } }
@@ -490,11 +495,12 @@ function render() {
     else if (l.type === 'ice') drawIce(l, y, th);
     else if (l.type === 'belt') drawBelt(l, y);
   }
+  if (G.prints) for (const [px, pr, f] of G.prints) { ctx.fillStyle = 'rgba(120,150,190,.35)'; for (const d of [-1, 1]) { ctx.beginPath(); ctx.ellipse(sx(px) + d * U * .08, CH / 2 - (pr - camR) * U, U * .05, U * .035, 0, 0, TAU); ctx.fill(); } }
   // objects, props, pickups, cat in row order (top rows first so lower rows overlap)
   ctx.save(); ctx.beginPath(); ctx.rect(OX - U * .5, 0, COLS * U + U, CH); ctx.clip();
   const catRow = P.hop < 1 ? P.hr + (P.tr - P.hr) * P.hop : P.r;
   const drawCatNow = () => {
-    const cx = P.hop < 1 ? P.hx + (P.tx - P.hx) * P.hop : P.x, cr = catRow, arc = P.hop < 1 && !P.hopSlide ? Math.sin(P.hop * Math.PI) * .35 : 0;
+    const cx = P.hop < 1 ? P.hx + (P.tx - P.hx) * P.hop : P.x, cr = catRow, arc = P.hop < 1 && !P.hopSlide ? Math.sin(P.hop * Math.PI) * .35 : (G.state === 'win' ? Math.abs(Math.sin(clock * 9)) * .3 : 0);
     const px = sx(cx + .5), py = CH / 2 - (cr - camR) * U - U * .08 - arc * U;
     ctx.fillStyle = 'rgba(0,0,0,' + (.28 - arc * .3) + ')'; ctx.beginPath(); ctx.ellipse(px, CH / 2 - (cr - camR) * U - U * .1, U * (.26 - arc * .2), U * .08, 0, 0, TAU); ctx.fill();   // shadow follows hop height
     const bump = P.bump ? Math.sin(P.bump * 12) * U * .05 : 0;
@@ -561,20 +567,20 @@ function buildGrid() {
   }
   $('bcont').textContent = SV.at >= LEVELS ? '★ All cleared! Replay level 50' : (SV.at ? '▶ Continue · Level ' + nextL : '▶ Play Level 1');
   $('bcont').onclick = () => startLevel(Math.min(LEVELS, nextL));
-  $('tsub').textContent = 'Hop the roads, rails and rivers to the bowl · ' + SV.at + '/' + LEVELS + ' cleared · 🐟 ' + SV.fish;
+  $('tsub').textContent = 'Hop the roads, rails and rivers to the bowl · ' + SV.at + '/' + LEVELS + ' cleared · ★ ' + Object.values(SV.stars).reduce((a, b) => a + b, 0) + '/150 · 🐟 ' + SV.fish;
 }
 function showTitle() { if (G) G.state = 'title'; $('hud').hidden = true; $('deck').hidden = true; $('msg').classList.add('hide'); buildGrid(); $('title').classList.remove('hide'); const nx = $('lgrid').querySelector('.next'); if (nx) nx.scrollIntoView({ block: 'center' }); }
 function msg(title, sub, stars, btns) {
   $('mt').textContent = title; $('ms').textContent = sub; const ms = $('mstars'); ms.innerHTML = stars == null ? '' : [1, 2, 3].map(k => '<i class="' + (k <= stars ? 'on' : '') + '" style="--k:' + k + '">★</i>').join('');
-  const row = $('mb'); row.innerHTML = ''; btns.forEach(([l, f, on]) => { const b = document.createElement('button'); b.textContent = l; if (on) b.className = 'on'; b.onclick = f; row.appendChild(b); }); $('msg').classList.remove('hide');
+  const row = $('mb'); row.innerHTML = ''; setTimeout(() => { const b = row.querySelector('.on'); if (b) b.focus(); }, 50); btns.forEach(([l, f, on]) => { const b = document.createElement('button'); b.textContent = l; if (on) b.className = 'on'; b.onclick = f; row.appendChild(b); }); $('msg').classList.remove('hide');
 }
-function showWin() { /* V37: animated stars on the clear screen (CSS) */ const L = G.L; msg(L >= LEVELS ? 'All 50 roads crossed! 🏆' : 'Level clear! 🎉', G.title + '\n🐟 ' + G.fish + '/' + G.fishTotal + (G.lost ? '  ·  ' + G.lost + ' ✖' : '  ·  no crashes!'), G.stars, [L < LEVELS ? ['Next level ▶', () => startLevel(L + 1), 1] : ['Levels', showTitle, 1], ['Replay', () => startLevel(L)], ['Levels', showTitle]]); }
+function showWin() { /* V37: animated stars on the clear screen (CSS) */ const L = G.L; msg(L >= LEVELS ? 'All 50 roads crossed! 🏆' : 'Level clear! 🎉', G.title + '\n⏱ ' + G.time.toFixed(1) + ' s' + (G.newBest ? ' · new best!' : '  (best ' + SV.best[L] + ' s)') + '  ·  🐟 ' + G.fish + '/' + G.fishTotal + (G.lost ? '  ·  ' + G.lost + ' ✖' : '  ·  no crashes!'), G.stars, [L < LEVELS ? ['Next level ▶', () => startLevel(L + 1), 1] : ['Levels', showTitle, 1], ['Replay', () => startLevel(L)], ['Levels', showTitle]]); }
 function showLose() { msg('Out of lives 😿', G.title + '\n' + ({ car: 'Squished by a vehicle', water: 'Fell in the water', train: 'Hit by a train', carried: 'Carried away', hawk: 'Snatched by a hawk', dog: 'Caught by a dog' }[G.kind] || ''), null, [['Try again', () => startLevel(G.L), 1], ['Levels', showTitle]]); }
-function pause(on) { if (!G || G.state !== 'play') return; paused = on; if (on) msg('Paused', G.title, null, [['Resume', () => pause(false), 1], ['Restart', () => startLevel(G.L)], ['Levels', showTitle]]); else $('msg').classList.add('hide'); }
+function pause(on) { if (!G || G.state !== 'play') return; paused = on; $('bpause').textContent = on ? '▶' : '❚❚'; if (on) msg('Paused', G.title + '\n★ reach the bowl  ★ no crashes  ★ ' + Math.ceil(G.fishTotal * .6) + ' of ' + G.fishTotal + ' fish', null, [['Resume', () => pause(false), 1], ['Restart', () => startLevel(G.L)], ['Levels', showTitle]]); else $('msg').classList.add('hide'); }
 
 /* ---------- input ---------- */
-const KEYS = { ArrowUp: [0, 1], KeyW: [0, 1], ArrowDown: [0, -1], KeyS: [0, -1], ArrowLeft: [-1, 0], KeyA: [-1, 0], ArrowRight: [1, 0], KeyD: [1, 0] };
-addEventListener('keydown', e => { const k = KEYS[e.code]; if (k) { e.preventDefault(); tryHop(k[0], k[1]); } else if (e.code === 'Escape' || e.code === 'KeyP') pause(!paused); });
+const KEYS = { ArrowUp: [0, 1], KeyW: [0, 1], Space: [0, 1], ArrowDown: [0, -1], KeyS: [0, -1], ArrowLeft: [-1, 0], KeyA: [-1, 0], ArrowRight: [1, 0], KeyD: [1, 0] };
+addEventListener('keydown', e => { if (e.code === 'KeyR' && G && (G.state === 'play' || G.state === 'over')) { startLevel(G.L); return; } if (!$('msg').classList.contains('hide') && (e.code === 'Enter' || e.code === 'Space')) { e.preventDefault(); const b = $('mb').querySelector('.on') || $('mb').querySelector('button'); if (b) b.click(); return; } if (e.code === 'Enter' && G && G.state === 'title') { $('bcont').click(); return; } const k = KEYS[e.code]; if (k) { e.preventDefault(); tryHop(k[0], k[1]); } else if (e.code === 'Escape' || e.code === 'KeyP') pause(!paused); });
 let sw = null;
 cv.addEventListener('pointerdown', e => { sw = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId }; if (AC && AC.state === 'suspended') AC.resume(); });
 cv.addEventListener('pointerup', e => {
@@ -582,12 +588,14 @@ cv.addEventListener('pointerup', e => {
   if (Math.hypot(dx, dy) < 22) tryHop(0, 1); else if (Math.abs(dx) > Math.abs(dy)) tryHop(dx > 0 ? 1 : -1, 0); else tryHop(0, dy < 0 ? 1 : -1);
 });
 cv.addEventListener('pointercancel', () => { sw = null; });
-document.querySelectorAll('#pad button').forEach(b => { const d = b.dataset.d, v = { u: [0, 1], d: [0, -1], l: [-1, 0], r: [1, 0] }[d]; b.addEventListener('pointerdown', e => { e.preventDefault(); b.classList.add('dn'); tryHop(v[0], v[1]); }); const up = () => b.classList.remove('dn'); b.addEventListener('pointerup', up); b.addEventListener('pointerleave', up); b.addEventListener('pointercancel', up); });
+document.querySelectorAll('#pad button').forEach(b => { let rep = null; const stopRep = () => { clearInterval(rep); rep = null; }; b.addEventListener('pointerdown', () => { stopRep(); const v = { u: [0, 1], d: [0, -1], l: [-1, 0], r: [1, 0] }[b.dataset.d]; rep = setInterval(() => tryHop(v[0], v[1]), 190); }); ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => b.addEventListener(t, stopRep)); const d = b.dataset.d, v = { u: [0, 1], d: [0, -1], l: [-1, 0], r: [1, 0] }[d]; b.addEventListener('pointerdown', e => { e.preventDefault(); b.classList.add('dn'); tryHop(v[0], v[1]); }); const up = () => b.classList.remove('dn'); b.addEventListener('pointerup', up); b.addEventListener('pointerleave', up); b.addEventListener('pointercancel', up); });
 $('bpause').onclick = () => pause(!paused);
 function muteIcon() { $('bmute').textContent = SV.mute ? '🔇' : '🔊'; }
-$('bmute').onclick = () => { SV.mute = SV.mute ? 0 : 1; save(); muteIcon(); };
+$('bmute').onclick = () => { SV.mute = SV.mute ? 0 : 1; save(); muteIcon(); try { CQMidi.mute(!!SV.mute); } catch (e) { } };
+try { if (window.CQMidi && CQMidi.muted() && !SV.mute) { SV.mute = 1; muteIcon(); } else if (window.CQMidi && SV.mute) CQMidi.mute(true); } catch (e) { }
 muteIcon();
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(true); });
+addEventListener('blur', () => pause(true));
 document.addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('selectstart', e => e.preventDefault());
 
@@ -596,8 +604,11 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last) / 1000); last = now;
   if (!paused) update(dt);
+  if (G && G.state === 'play' && !paused) { const s = Math.floor(G.t); if (s !== G.shownT) { G.shownT = s; $('htime').textContent = '⏱ ' + s + 's'; } }
   render();
 }
+try { localStorage.setItem('cq_lastgame', 'cross2d'); } catch (_) {}
+try { history.pushState({ c2: 1 }, ''); addEventListener('popstate', () => { if (G && G.state !== 'title') { paused = false; showTitle(); history.pushState({ c2: 1 }, ''); } else location.href = 'index.html'; }); } catch (_) {}
 window.CR2 = { startLevel, genLevel, get G() { return G; }, P, tryHop, showTitle };
 resize();
 G = genLevel(SV.at >= LEVELS ? LEVELS : Math.max(1, SV.at + 1)); G.state = 'title'; camR = 4;

@@ -1,4 +1,4 @@
-import * as THREE from 'https://esm.sh/three@0.160.0';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 import { makeCat, makeDog, selectedCat } from './char3d.js';
 
 // 3D pong: the cat (you) on the left, the dog on the right. First to 5 wins.

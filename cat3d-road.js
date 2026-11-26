@@ -1,4 +1,4 @@
-import * as THREE from 'https://esm.sh/three@0.160.0';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 // Cross Road's cat: a longer, sleeker build than the chibi cat in char3d.js.
 // Faces -z (the direction it hops), feet on y=0, same pieces as char3d.js (userData.head / tail).
 const M=(c,o)=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.6},o||{}));

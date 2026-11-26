@@ -18,6 +18,10 @@
     if (id === 'cross2d') return ls('cq_cr2', { at: 0 }).at || 0;
     return (pr[k] && pr[k].at) || 0;
   }
+  // 3D cards switch to the real screenshot captured on this phone the first time the game was played
+  function realShots() { const games = (window.cqStore && cqStore.games) || [], cards = document.querySelectorAll('#sgrid .scard');
+    games.forEach((g, k) => { let u = null; try { u = localStorage.getItem('cq_shot_' + g.id); } catch (_) {} const im = cards[k] && cards[k].querySelector('.sshot img'); if (u && im && im.src !== u) { im.src = u; im.classList.add('ld'); } }); }
+  realShots(); document.addEventListener('visibilitychange', () => { if (!document.hidden) realShots(); }); addEventListener('pageshow', realShots);
   setTimeout(badges, 300); document.addEventListener('visibilitychange', () => { if (!document.hidden) badges(); });
   try { const _h = cqStore.home; cqStore.home = function () { _h.apply(this, arguments); badges(); }; } catch (_) {}
 })();

@@ -55,3 +55,57 @@ Not done: the remaining 29, 3D page testing (three.js unreachable here).
 
 ## 1.0.3
 - The 3 world selectors (Classic, Cat Worlds, The River; Bosses when unlocked) are back on the character-pick sheet for Cat Quest and Cat Run. In Cat Run they set the world type; in Cat Quest PLAY opens the story map at your furthest unlocked level in that world.
+
+# 1.1.0 final release
+
+## New feature: Save & load all game data
+Store header → "💾 Save & load" (also in the pause menu). Downloads one .json file holding every game's progress and settings: Cat Quest, Cat Run, Temple Dash, Kitty Maze, Pong, Pac, Tetris, Jewels, the 3D games, Cross Road 2D and 3D, and Inkbound. Load it on another phone or after clearing the browser. "Load" keeps games that aren't in the file; "Replace everything" swaps it all. Tested: save → erase → load (both modes) restores everything.
+
+## 102 improvements (each one built and checked)
+Save & load details (13)
+1 shows which games a save file holds · 2 flushes unsaved progress before saving · 3 Share button (phone share sheet) · 4 rejects oversized files · 5 rejects files that aren't Cat Quest saves · 6 refuses saves from a newer version · 7 only plain text keys/values are imported · 8 automatic undo point before any load or erase · 9 the running game can't overwrite a freshly loaded save · 10 shows what's on this phone, its size and the last backup date · 11 two-tap "Erase all progress" · 12 tap outside closes the panel · 13 drag-and-drop a save file onto the page
+
+Store and app shell (25)
+14 store subtitle: game count and levels cleared · 15 NEW badge on Cross Road 2D and Inkbound until opened · 16 light tap buzz on store cards · 17 broken preview image falls back to a tile · 18 3D cards say "needs internet" when offline · 19 offline notice · 20 back-online notice · 21 asks the browser to keep saves from being evicted · 22 "update ready, tap to reload" when a new version installs · 23 weekly backup reminder once you have progress · 24 PLAY ignores accidental double taps · 25 version label in the store · 26 notices now show above every screen (they were hidden behind the store) · 27 tap a notice to dismiss it · 28 chosen world (Classic / Cat Worlds / River) remembered · 29 "▶ Continue" button for the last game played · 30 store scrolls to the last-played game · 31 pick sheet shows the game's blurb and your progress · 32 Enter plays / Escape goes back on the pick sheet · 33 pause menu has a Save button · 34 focus returns to the button that opened a dialog · 35 ?game= links work for all 15 games · 36 cards rise in one after another · 37 previews fade in when loaded · 38 every button presses down · 39 PLAY softly glows · 40 the chosen pet pops · 41 48 px tap targets in result dialogs
+
+Bug fix (1)
+42 Cat Quest story progress was saved but never read back, so it reset on every reload. Fixed.
+
+Offline and updates (6)
+43 pages load fresh when online, cached copy when offline · 44 scripts/styles/images served instantly and refreshed in the background · 45 three.js is kept after the first 3D game, so 3D games then work offline · 46 the whole 2D arcade and store pictures are stored on install · 47 Inkbound arenas are kept as you play them · 48 partial / error responses never cached
+
+All seven 3D games (16)
+49 data-saver or low-battery phones render at 1x · 50 opening one by link still marks it "last played" · 51 tab titles name the arcade · 52 Android back goes to the store · 53 "Tap to continue" after returning, so the first tap can't make a stray move · 54 buzz on button taps · 55 one gameplay tip on the loading screen · 56 no loading-screen flash on fast loads · 57 visible keyboard focus · 58 reduced-motion respected · 59 your best score on the loading screen (Tetris, Jewels, Cross Road 3D) · 60 tab title shows the level you're on · 61 three.js download starts earlier (preconnect + modulepreload) · 62 app icons on every 3D page · 63 "Add to home screen" from a 3D page installs the arcade · 64 dark colour scheme hint
+
+Cross Road 2D (28)
+65 Space hops · 66 hold a d-pad arrow to keep hopping · 67 tiny buzz per hop · 68 best time per level, "new best!" · 69 brief slow-motion on a crash · 70 Enter/Space presses the main button on any message · 71 total stars on the level list · 72 pause shows the three star goals · 73 "close!" pop when a car just misses you · 74 pauses when the window loses focus · 75 main button gets focus · 76 data-saver/low battery renders at 1x · 77 Android back: game → level list → store · 78 counts as last played in the store · 79 live timer in the HUD · 80 R restarts · 81 pause button turns into ▶ · 82 app icons / manifest on the page · 83 whoosh sound on a close call · 84 ripple when you land on a log, lily or turtle · 85 hop pitch rises as you near the bowl · 86 hawk cry when it starts circling · 87 train horn when a train sets off nearby · 88 slide sound on ice · 89 paw prints in the snow (Frosty Fields) · 90 victory bounce at the bowl · 91 last heart pulses · 92 HUD fits on one line on small phones
+
+Inkbound (8)
+93 starting a match on a phone goes full screen and locks landscape where allowed · 94 buzz on touch buttons · 95 counts as last played · 96 leaving for the store exits full screen · 97 tab title names the arcade · 98 install icons / manifest · 99 header buttons become icons on narrow phones · 100 touch pad hidden outside matches (it ran off the screen)
+
+Install (2)
+101 iPhone home-screen title and full-screen status bar · 102 re-opening the installed app focuses the open window
+
+Checks run: every 2D mode started and driven in portrait and landscape; Cross Road 2D and Inkbound played; all 7 3D pages booted with a three.js stand-in (no script errors, loading screen clears); save → erase → load in both modes.
+Not verifiable here: how the 3D games look (three.js can't download in the build sandbox) and the offline caching of three.js (needs a real connection once).
+
+## 1.1.1
+- World buttons on the pick sheet now always do something. Cat Quest: Classic opens the story map; Cat Worlds and The River play their own 50 levels directly, starting at level 1 and moving on as you clear them ("Next level" stays inside that world; your place is remembered). A line under the buttons says what PLAY will do. Cat Run: the chosen world sets the run type (Classic Dash, Cat World Run, River Run), as before.
+
+## 1.1.2
+- Real store screenshots for the 3D games: the first time you play each one, the app saves a real frame from it and that store card uses it from then on (kept out of save files).
+- three.js now loads from cdn.jsdelivr.net (same version) and is cached for offline play.
+
+## 1.1.3
+- Offline layer now loads new code first when online, so updates (like the screenshot capture) work on the first visit instead of the second.
+- 3D screenshot capture starts sooner (1.5 s) and keeps trying for 30 s.
+
+## 1.2.0 - real MIDI jukebox
+- 24 songs live as real .mid files in `music/` (listed in `music/playlist.json`); nothing is typed into code.
+- `midi.js` reads Standard MIDI Files (tempo changes, instruments, volume/pan, drums) and plays them with a built-in Web Audio synth.
+- Every song plays start to finish; when it ends a new random song starts (all 24 play before any repeats, and the last song of the previous visit never opens the next one).
+- The intro (tap screen + intro animation) plays Hard Knock Life; the old chiptune tune is gone. After it the shuffle carries on.
+- All 3D games, Cross Road 2D, Inkbound and the 2D arcade have music; the sound button (or the small music button in the 3D games / Inkbound) mutes it, and the choice is remembered.
+- Music pauses when the app is in the background and resumes when you come back; service worker caches the songs for offline play (cq-1.2.0).
+- 1.2.1: soundtrack now 24 songs (added Sabotage, Fight For Your Right, Gangsta's Paradise, Ruff Ryders' Anthem, I Heard It Through the Grapevine).
+- 1.2.2: Elk River Bandit added to the store (elkriver/), with its own 24-song MIDI soundtrack and a back-to-store button.

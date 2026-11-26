@@ -390,3 +390,52 @@ body[data-game="story"] #pkworld,body[data-game="run"] #pkworld{display:block}
 #lgroups .b.on{background:var(--gold);color:var(--ink);border-color:#fff3d0}
 body.locked #lgroups .b:nth-child(4){display:none}
 body[data-o="l"] #pkworld{margin-bottom:8px}
+
+/* ---------- save & load panel (release.js) ---------- */
+.shtools{display:flex;justify-content:center;margin-top:8px}
+.shtools .b{min-height:40px;padding:6px 14px;font-size:13px}
+#sv{background:rgba(10,6,34,.82);justify-content:center;z-index:60}
+#sv .svcard{width:100%;max-width:520px;max-height:100%;overflow-y:auto;background:#2a2260;border:3px solid #6a5bd6;border-radius:22px;padding:16px;box-shadow:0 10px 0 rgba(0,0,0,.35);overscroll-behavior:contain;touch-action:pan-y}
+#sv header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+#sv h2{flex:1;margin:0;font:900 22px system-ui;color:var(--gold)}
+#svx{width:44px;min-height:44px;padding:0}
+.svbox{background:rgba(0,0,0,.22);border-radius:14px;padding:10px 12px;margin:8px 0;text-align:left}
+.svbox.on{border:2px solid var(--gold)}
+.svbox b{font:900 14px system-ui}.svbox p{margin:4px 0 0;font:700 13px/1.4 system-ui}.svbox small{opacity:.7;font-weight:600}
+.svrow{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.svrow .b{flex:1 1 140px;min-height:48px;font-size:14px;padding:8px 10px}
+.svrow.small .b{min-height:40px;font-size:12px}
+.svrow .b.danger{background:#5a1f3a;border-color:#ff6b8a}
+.svhelp{font:600 12px/1.4 system-ui;opacity:.75;margin:4px 2px;text-align:left}
+.sverr{background:#5a1f3a;border-radius:12px;padding:8px 10px;font:800 13px system-ui;margin:0 0 6px}
+.snew{position:absolute;left:8px;top:8px;background:#ff4d6d;color:#fff;font:900 11px/1 system-ui;letter-spacing:1px;padding:5px 8px;border-radius:9px;box-shadow:0 2px 0 rgba(0,0,0,.35);animation:newp 1.6s ease-in-out infinite}
+@keyframes newp{50%{transform:scale(1.08)}}
+.sshot.noimg{background:linear-gradient(135deg,#3b2f86,#1d1745)}
+.scard.offline .sshot::after{content:"📶 needs internet";position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.7);color:#fff;font:800 11px system-ui;padding:4px 8px;border-radius:8px}
+.sver{text-align:center;font:700 11px system-ui;opacity:.45;margin:6px 0 0}
+@media (prefers-reduced-motion:reduce){.snew{animation:none}}
+#sv .svrow .b.go{font-size:15px;min-height:48px;padding:8px 10px}
+
+/* polish2d.js */
+#toast.top{position:fixed;z-index:90;top:auto;bottom:calc(var(--sab) + 28px);pointer-events:auto;cursor:pointer}
+#store #scont{margin-right:8px;max-width:60vw;min-height:40px;padding:6px 14px;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#menu .ovhead{flex-wrap:wrap}
+#pksub{flex-basis:100%;padding-left:62px;display:block;font:700 13px/1.3 system-ui;opacity:.8;margin-top:2px;letter-spacing:0;text-shadow:none;color:#fff}
+body[data-o="p"] #toast.top{top:auto}
+#pksub{text-align:left;margin-top:-10px}
+
+/* final visual polish: V1..V6 */
+@media (prefers-reduced-motion:no-preference){
+  #sgrid .scard{animation:cardin .38s cubic-bezier(.2,1.2,.4,1) both}                       /* V1 cards rise in, one after another */
+  #sgrid .scard:nth-child(2){animation-delay:.03s}#sgrid .scard:nth-child(3){animation-delay:.06s}#sgrid .scard:nth-child(4){animation-delay:.09s}
+  #sgrid .scard:nth-child(5){animation-delay:.12s}#sgrid .scard:nth-child(6){animation-delay:.15s}#sgrid .scard:nth-child(n+7){animation-delay:.18s}
+  #pkgo{animation:playglow 2.4s ease-in-out infinite}                                           /* V4 PLAY gently glows */
+  #cards .card.on,#cards .card.sel,#cards .card[aria-pressed="true"]{animation:petpop .3s cubic-bezier(.2,1.6,.4,1)}  /* V5 chosen pet pops */
+}
+@keyframes cardin{from{opacity:0;transform:translateY(14px) scale(.97)}}
+@keyframes playglow{50%{box-shadow:0 0 0 4px rgba(255,216,74,.25),0 0 26px rgba(255,178,58,.55)}}
+@keyframes petpop{40%{transform:scale(1.07)}}
+.sshot img{transition:opacity .3s}.sshot img:not(.ld){opacity:0}.sshot img.ld{opacity:1}       /* V2 previews fade in once loaded */
+button.b:active{transform:translateY(2px) scale(.98)}                                          /* V3 every button presses down */
+#msg button,#msg .b{min-height:48px}                                                           /* V6 48 px touch targets in result dialogs */
+#pkwhint{margin:6px 2px 0;font:700 12px/1.3 system-ui;opacity:.8;text-align:left}
