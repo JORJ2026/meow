@@ -263,7 +263,11 @@ function cellAt(x,y){
   const c=Math.floor(hit.x/S+N/2),r=Math.floor(-hit.y/S+N/2);
   return inB({r,c})?{r,c}:null;
 }
+// menu guard: taps/swipes on the level map, result card or buttons never reach the board
+const inUI=e=>!!(document.getElementById('cqmap')||document.getElementById('cqres')||(e&&e.target&&e.target.closest&&e.target.closest('#cqmapbtn,#back,button,a,input')));
+const dropInput=()=>{drag=null;orb=null;sel=null;hov=null;};
 addEventListener('pointerdown',e=>{
+  if(inUI(e)){dropInput();return;}
   idleT=0;hint=undefined;
   const p=cellAt(e.clientX,e.clientY);
   if(!p||e.button===2||e.shiftKey){orb={x:e.clientX,y:e.clientY,yaw0:yaw,pitch0:pitch};return;}
@@ -271,6 +275,7 @@ addEventListener('pointerdown',e=>{
   drag={p,x:e.clientX,y:e.clientY,moved:false};
 });
 addEventListener('pointermove',e=>{
+  if(inUI(e)){if(drag||orb)dropInput();return;}
   if(orb){yaw=Math.max(-1.2,Math.min(1.2,orb.yaw0-(e.clientX-orb.x)*.005));pitch=Math.max(.1,Math.min(1.35,orb.pitch0+(e.clientY-orb.y)*.004));return;}
   hov=cellAt(e.clientX,e.clientY);
   if(drag&&hov&&Math.random()<.3)spark(cx(hov.c),cy(hov.r),'#fff6b0',1);
@@ -282,6 +287,7 @@ addEventListener('pointermove',e=>{
   if(inB(q)&&state==='idle')trySwap({r:drag.p.r,c:drag.p.c},q);
 });
 addEventListener('pointerup',e=>{
+  if(inUI(e)){dropInput();return;}
   if(orb){orb=null;return;}
   if(!drag)return;const d=drag;drag=null;
   if(d.moved||state!=='idle')return;
@@ -351,7 +357,8 @@ const shootGeo=new THREE.BoxGeometry(2.6,.035,.02);
 // 3. swap-wiggle when a swap does not match
 let wig=0;
 // 4. tap ring when selecting a gem
-addEventListener('pointerdown',e=>{const p=cellAt(e.clientX,e.clientY);if(p&&state==='idle')ring(cx(p.c),cy(p.r),'#ffffff',.6*S);});
+addEventListener('pointercancel',()=>dropInput());
+addEventListener('pointerdown',e=>{if(inUI(e))return;const p=cellAt(e.clientX,e.clientY);if(p&&state==='idle')ring(cx(p.c),cy(p.r),'#ffffff',.6*S);});
 // 5. combo bar colour climbs with the chain
 const cbf=$('cbf');
 // 6. HUD score punch
@@ -548,9 +555,11 @@ function mapCfg(){return{title:'💎 Kitty Jewels 3D',
   isOpen:i=>i<=JP.at,stars:i=>JP.st[i]||0,cur:L,
   go:i=>{if(i===L&&!ENDLESS&&!moved&&!ended){paused=false;return;}goL(i);},
   extra:[{label:'∞ Endless',fn:()=>{location.href='jewels.html?endless=1';}}],
-  onOpen:()=>{paused=true;},onClose:()=>{paused=false;}};}
+  onOpen:()=>{paused=true;drag=null;orb=null;sel=null;},onClose:()=>{paused=false;drag=null;orb=null;}};}
 function openMap(){const r=document.getElementById('cqres');if(r)r.remove();CQ.open(mapCfg());}
-CQ.button(openMap);
+CQ.button(openMap,{style:'right:calc(env(safe-area-inset-right) + 10px)'});
+// keep the HUD pills clear of the Map button (Store button is top-left, Map is top-right)
+(()=>{const st=document.createElement('style');st.textContent='#hud{right:calc(env(safe-area-inset-right) + 96px);line-height:1.9}#hud .pill{margin-bottom:2px}#mood{top:calc(env(safe-area-inset-top) + 52px)!important}';document.head.appendChild(st);})();
 addEventListener('keydown',e=>{if(e.code==='KeyM'&&!CQ.isOpen()){e.preventDefault();openMap();}},true);
 if(!ENDLESS){say((L+1)+'. '+JSN[s]+' — '+TARGET+' 🎯','#ffd84a');if(!QS.has('L'))setTimeout(openMap,60);}
 })();}catch(err){console.warn('levels pass skipped',err);}

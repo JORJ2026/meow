@@ -309,11 +309,15 @@ requestAnimationFrame(frame);
   let L=parseInt(QS.get('L'));const hasL=L>=0&&L<N;
   if(!hasL){const ol=QS.get('lv');L=(ol!==null&&+ol>=0&&+ol<=4)?Math.round(+ol*12.25):Math.min(N-1,PP.at||0);}
   // interpolate the five old tiers across 50 levels
-  function apply(i){const f=i/(N-1)*4,a=Math.floor(Math.min(3,f)),k=f-a,A=LVLS[a],B=LVLS[a+1],m=(x,y)=>x+(y-x)*k;
-    LV=Math.min(4,Math.round(f));S0=m(A.s0,B.s0);SMAX=m(A.smax,B.smax);AIS=m(A.ai,B.ai);GAIN=m(A.g,B.g);ADD=m(A.a,B.a);}
+  // difficulty 1-5 (Kitten..Lion), default 5; it sets most of the speed, the level adds the rest
+  let DF=4;try{const v=localStorage.getItem('cq_pong3d_diff');if(v!==null&&+v>=0&&+v<=4)DF=+v;}catch(_){}
+  const setDF=n=>{DF=Math.max(0,Math.min(4,n|0));try{localStorage.setItem('cq_pong3d_diff',String(DF));}catch(_){}apply(L);if(started)hud.textContent=tagTxt();};
+  const tagTxt=()=>'🏓 '+pName(L)+' · '+(DF+1)+' '+LVLS[DF].n;
+  function apply(i){const f=i/(N-1)*4,a=Math.floor(Math.min(3,f)),k=f-a,A=LVLS[a],B=LVLS[a+1],m=(x,y)=>x+(y-x)*k,D=LVLS[DF],q=(x,y)=>x+(y-x)*.6;
+    LV=DF;S0=q(m(A.s0,B.s0),D.s0);SMAX=q(m(A.smax,B.smax),D.smax);AIS=q(m(A.ai,B.ai),D.ai);GAIN=q(m(A.g,B.g),D.g);ADD=q(m(A.a,B.a),D.a);}
   const hud=document.createElement('div');hud.id='lvtag';document.body.appendChild(hud);
   let started=false;
-  function begin(){apply(L);hud.textContent='🏓 '+pName(L);const r=document.getElementById('cqres');if(r)r.remove();P.over=null;P.serve=1.1;started=true;}
+  function begin(){apply(L);hud.textContent=tagTxt();const r=document.getElementById('cqres');if(r)r.remove();P.over=null;P.serve=1.1;started=true;}
   const goL=i=>{location.href='pong3d.html?L='+i;};
   end=function(){
     const win=P.over==='win';P.cheer=2.5;if(win)confetti(120);
@@ -326,6 +330,7 @@ requestAnimationFrame(frame);
     CQ.open({title:'🏓 Kitty Pong 3D',worlds:PW.map(t=>({n:t.n,c1:t.sky[2],c2:t.sky[1],g:t.g,deco:t.deco})),
       levels:w=>[0,1,2,3,4].map(k=>w*5+k),name:pName,isOpen:i=>i<=PP.at,stars:i=>PP.st[i]||0,cur:L,
       go:i=>{if(i===L&&!started){begin();return;}goL(i);},
+      diff:{label:'Difficulty',opts:LVLS.map((d,k)=>(k+1)+' '+d.n),get:()=>DF,set:setDF},
       onOpen:()=>{prevOver=P.over;P.over='pick';},
       onClose:()=>{if(!started)begin();else P.over=prevOver;}});}
   CQ.button(openMap,{style:'right:58px'});

@@ -19,7 +19,7 @@
   function setUnl(v) { try { if (v) sessionStorage.setItem(UK, '1'); else sessionStorage.removeItem(UK); } catch (e) { } }
 
   var css = '' +
-    '#cqmap,#cqres{position:fixed;inset:0;z-index:9000;display:flex;flex-direction:column;align-items:center;background:rgba(10,6,28,.94);color:#fff;font:600 14px system-ui,-apple-system,"Segoe UI",sans-serif;padding:max(8px,env(safe-area-inset-top)) 8px max(8px,env(safe-area-inset-bottom));box-sizing:border-box;overflow:auto}' +
+    '#cqmap,#cqres{position:fixed;inset:0;z-index:9000;display:flex;flex-direction:column;align-items:center;background:rgba(10,6,28,.94);color:#fff;font:600 14px system-ui,-apple-system,"Segoe UI",sans-serif;padding:max(8px,env(safe-area-inset-top)) 8px max(8px,env(safe-area-inset-bottom));box-sizing:border-box;overflow:auto;touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}' +
     '#cqmap *,#cqres *{border-radius:0!important;box-sizing:border-box}' +
     '#cqmap h1{margin:4px 0 6px;font-size:clamp(18px,4.6vw,26px);color:#ffd84a;text-shadow:0 2px 0 #000;text-align:center}' +
     '#cqmap .row{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin:3px 0;max-width:920px}' +
@@ -92,8 +92,16 @@
     h += '<div class="row"><input class="code" type="text" inputmode="numeric" maxlength="4" placeholder="🔑 Code" aria-label="Unlock code"></div>';
     el.innerHTML = h;
     cv = el.querySelector('canvas'); ctx = cv ? cv.getContext('2d') : null;
-    info();
+    info(); fit();
   }
+  function fit() {
+    if (!el || !cv) return;
+    cv.style.width = ''; cv.style.width = cv.getBoundingClientRect().width + 'px';
+    var over = el.scrollHeight - el.clientHeight;
+    if (over > 0) { var h = cv.getBoundingClientRect().height, nh = Math.max(150, h - over - 2); cv.style.width = Math.min(cv.getBoundingClientRect().width, nh * CW / CH) + 'px'; }
+  }
+  var rzT = 0;
+  addEventListener('resize', function () { clearTimeout(rzT); rzT = setTimeout(function () { if (el && mode === 'map') { var nw = innerWidth < 640 && innerHeight > innerWidth ? 420 : 920; if (nw !== CW) build(); else fit(); } }, 120); });
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function info() {
     var i = $('.info'); if (!i) return;
@@ -149,12 +157,21 @@
   // ---- input ----
   document.addEventListener('click', function (e) {
     if (!el || !el.contains(e.target)) return;
-    if (e.target.tagName === 'CANVAS') {
+    if (e.target.tagName === 'CANVAS') return;
+    var b = e.target.closest('button[data-a]'); if (!b) return;
+    act(b);
+  }, true);
+  var cdn = null;
+  document.addEventListener('pointerdown', function (e) { cdn = (el && cv && e.target === cv) ? { x: e.clientX, y: e.clientY } : null; }, true);
+  document.addEventListener('pointerup', function (e) {
+    if (!el || !cv || e.target !== cv || !cdn) return;
+    var moved = Math.hypot(e.clientX - cdn.x, e.clientY - cdn.y) > 14; cdn = null; if (moved) return;
+    {
       var r = cv.getBoundingClientRect(), x = (e.clientX - r.left) * CW / r.width, y = (e.clientY - r.top) * CH / r.height;
       for (var k = 0; k < hot.length; k++) { var h = hot[k]; if (Math.abs(h[0] - x) < h[2] && Math.abs(h[1] - y) < h[2]) { if (h[3] === sel) play(sel); else pick(h[3]); return; } }
-      return;
     }
-    var b = e.target.closest('button[data-a]'); if (!b) return;
+  }, true);
+  function act(b) {
     var a = b.dataset.a, v = b.dataset.v;
     if (a === 'x') close();
     else if (a === 'go') play(sel);
@@ -163,7 +180,7 @@
     else if (a === 'mode') { mode = v; build(); }
     else if (a === 'diff') { C.diff.set(+v); build(); }
     else if (a === 'extra') { var c = C; close(true); c.extra[+v].fn(); }
-  }, true);
+  }
   document.addEventListener('input', function (e) {
     if (!el || !e.target.classList.contains('code')) return;
     if (e.target.value.trim() === '1019') { setUnl(!unl()); e.target.value = ''; build(); flashInfo(unl() ? '🔓 Everything unlocked!' : '🔒 Locked again'); }

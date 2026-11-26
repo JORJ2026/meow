@@ -4174,31 +4174,45 @@ drawTiles=function(){
 const _bc2=breakCrate;
 breakCrate=function(tx,ty){_bc2(tx,ty);TCACHE.delete(Math.floor(tx/CHK));};
 // unified touch gestures: swipe / tap (no on-screen buttons needed)
+// platformer + runner: swipe UP = jump (keep finger down for a higher jump), swipe DOWN = slam (any cat, in the air; ACT on the ground)
+// runner also: tap or press-and-hold = jump
+function slamNow(){const p=P;if(!p||p.onGround||p.slamming||p.dashT>0)return false;p.slamming=true;p.vy=13;p.vx=0;p.buf=0;try{sfx.slam();}catch(_){}return true;}
 (function(){
-  let s=null;const TH=24;
-  const active=()=>!paused&&((state==='play'&&RUN)||state==='temple'||state==='maze'||state==='pac');
+  let s=null;const TH=24,HOLD=160;
+  const plat=()=>state==='play'&&!!P;
+  const active=()=>!paused&&(plat()||state==='temple'||state==='maze'||state==='pac');
+  const jumpOn=()=>{if(s&&!s.j){s.j=true;setKey('j',1);}};
   cv.addEventListener('pointerdown',e=>{
     if(!active()||s)return;audioInit();
-    s={id:e.pointerId,x:e.clientX,y:e.clientY,t:performance.now(),done:false,run:state==='play'&&RUN};
+    s={id:e.pointerId,x:e.clientX,y:e.clientY,t:performance.now(),done:false,pl:plat(),run:plat()&&RUN,j:false,tm:0};
     try{cv.setPointerCapture(e.pointerId);}catch(_){}
-    if(s.run)setKey('j',1);
+    if(s.run){const me=s;s.tm=setTimeout(()=>{if(s===me&&!me.done){me.done=true;jumpOn();}},HOLD);}  // press-and-hold = jump right away
   });
   cv.addEventListener('pointermove',e=>{
     if(!s||e.pointerId!==s.id||s.done)return;
     const dx=e.clientX-s.x,dy=e.clientY-s.y;if(Math.hypot(dx,dy)<TH)return;
-    s.done=true;const dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'r':'l'):(dy>0?'d':'u');
-    if(s.run){if(dir==='d'){setKey('j',0);setKey('a',1);setTimeout(()=>setKey('a',0),90);}}
+    s.done=true;clearTimeout(s.tm);const dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'r':'l'):(dy>0?'d':'u');
+    if(s.pl){
+      if(dir==='u')jumpOn();
+      else if(dir==='d'){if(s.j){s.j=false;setKey('j',0);}if(!slamNow()){setKey('a',1);setTimeout(()=>setKey('a',0),90);}}
+    }
     else SWIPE=dir;
   });
   const end=e=>{
     if(!s||e.pointerId!==s.id)return;
-    if(s.run)setKey('j',0);
+    clearTimeout(s.tm);
+    if(s.pl){
+      if(s.run&&!s.done){setKey('j',1);setTimeout(()=>setKey('j',0),110);}  // quick tap = short jump
+      else if(s.j)setKey('j',0);
+    }
     else if(!s.done&&state==='temple'&&performance.now()-s.t<300)SWIPE='u';
     s=null;
   };
   cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
-  let hint=false;
-  setInterval(()=>{if(!hint&&state==='play'&&RUN&&('ontouchstart' in window)){hint=true;toast('👆 Tap = jump (hold = higher) · swipe ↓ = action');}},700);
+  let hint=false,hint2=false;
+  setInterval(()=>{if(!('ontouchstart' in window)||state!=='play')return;
+    if(!hint&&RUN){hint=true;toast('👆 Tap or swipe ↑ = jump · swipe ↓ = slam');}
+    else if(!hint2&&!RUN){hint2=true;toast('👆 Swipe ↑ = jump · swipe ↓ = slam');}},700);
 })();
 
 /* ===== UI improvements JS (turn 4) ===== */
