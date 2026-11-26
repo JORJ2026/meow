@@ -1,5 +1,5 @@
 /* Elk River Bandit service worker — VERSION is stamped by scripts/build-web.js on release. */
-const VERSION="1.1.1";
+const VERSION="1.1.2";
 const CACHE="erb-"+VERSION;
 const CORE=["./","index.html","style.css","launch.css","app.js","midi.js","launch.js","config.js","version.js","manifest.webmanifest","favicon.ico","404.html",
 "icons/icon-192.png","icons/icon-512.png","icons/maskable-512.png","icons/apple-touch-icon.png","icons/favicon-32.png",
