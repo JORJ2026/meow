@@ -18,7 +18,7 @@ try{localStorage.setItem("erb2_t","1");localStorage.removeItem("erb2_t")}catch(e
 var set=Object.assign({mus:50,sfx:50,hap:true,pauseHid:true,wake:true,song:"shuffle"},jget("erb2_settings",{}));
 function saveSet(){lset("erb2_settings",JSON.stringify(set))}
 function applyAudio(){api.volumes(set.mus/50,set.sfx/50);window.erbSong=set.song==="shuffle"?null:set.song}
-function title(id){if(api.title&&api.title(id)!==id)return api.title(id);return id==="funky-soundtrack"?"Funky Soundtrack":id.split("-").map(function(w){return w.charAt(0).toUpperCase()+w.slice(1)}).join(" ")}
+function title(id){if(api.title)return api.title(id);var n=api.songs.indexOf(id);return n<0?"Music":"Track "+(n+1)}
 
 /* ---------- toasts / confirm ---------- */
 function stopBubble(el){["pointerdown","pointerup","pointermove","mousedown","mouseup","touchstart","touchend","touchmove","keydown","keyup","wheel"].forEach(function(t){el.addEventListener(t,function(e){e.stopPropagation()},{passive:true})})}
@@ -65,7 +65,7 @@ var wl=null;
 function wake(on){
   if(on&&!wl&&navigator.wakeLock){navigator.wakeLock.request("screen").then(function(l){wl=l;l.addEventListener("release",function(){wl=null})}).catch(function(){})}
   else if(!on&&wl){try{wl.release()}catch(e){}wl=null}}
-function place(){var r=$("#c").getBoundingClientRect(),g=$("#gear"),z=Math.max(36,Math.min(48,r.width*.036));g.style.width=g.style.height=z+"px";g.style.fontSize=Math.round(z*.48)+"px";g.style.left=Math.round(r.left+r.width*.19)+"px";g.style.top=Math.round(r.top+r.height*.022)+"px"}
+function place(){var r=$("#c").getBoundingClientRect(),g=$("#gear"),z=Math.max(28,Math.min(38,r.width*.03));g.style.width=g.style.height=z+"px";g.style.fontSize=Math.round(z*.48)+"px";g.style.left=Math.round(r.left+r.width*.19)+"px";g.style.top=Math.round(r.top+r.height*.022)+"px"}
 addEventListener("resize",place);place();
 setInterval(function(){
   place();var s=api.state(),playing=!!PLAYING[s];
@@ -84,7 +84,7 @@ var hiddenMusic=false;
 
 /* ---------- settings dialog ---------- */
 var sSong=$("#sSong");
-sSong.innerHTML='<option value="shuffle">🔀 Shuffle (all songs)</option>'+api.songs.map(function(id){return '<option value="'+id+'">'+title(id)+'</option>'}).join("");
+sSong.innerHTML='<option value="shuffle">🔀 Shuffle (all tracks)</option>'+api.songs.map(function(id){return '<option value="'+id+'">'+title(id)+'</option>'}).join("");
 function fill(){
   $("#sSound").value=api.isMuted()?"off":"on";$("#sMus").value=set.mus;$("#sSfx").value=set.sfx;sSong.value=set.song;
   $("#sHap").value=set.hap?"on":"off";$("#sPauseHid").value=set.pauseHid?"on":"off";$("#sWake").value=set.wake?"on":"off";
