@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bardel Logo</title>
+  <link rel="stylesheet" href="style.css" />
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <main class="maker">
+    <header class="app-bar"><button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Open controls" aria-expanded="false" aria-controls="controlSidebar"><span></span><span></span><span></span></button><span class="app-mark">Bardel</span></header>
+    <aside class="control-header" id="controlSidebar" aria-label="Logo controls" aria-hidden="true" inert>
+      <label class="text-control title-control"><span>Change title</span><input id="nameInput" type="text" value="Bardel" autocomplete="off" aria-label="Logo text"></label>
+      <section class="editor" aria-label="Typography and colors">
+        <label class="text-style-control"><span>Letter style</span><select id="letterStyle" aria-label="Letter style"><option value="0">Bardel Original</option><option value="1">Serif Book</option><option value="2">Classic Roman</option><option value="3">Slab Rock</option><option value="4">Modern Sans</option><option value="5">Heavy Display</option><option value="6">Rounded</option><option value="7">Mono Type</option><option value="8">Humanist</option><option value="9">Editorial Italic</option><option value="10">Handwritten</option></select></label>
+        <div class="swatches" id="swatches" aria-label="Letter colors"></div>
+        <label class="text-control subtitle-control"><span>Subtitle</span><input id="subtitleInput" type="text" value="Entertainment" autocomplete="off" aria-label="Subtitle text"></label>
+        <label class="text-style-control subtitle-style-control"><span>Subtitle style</span><select id="subtitleStyle" aria-label="Subtitle letter style"></select></label>
+        <label class="subtitle-color" title="Subtitle color"><input id="subtitleColor" type="color" value="#ffffff" aria-label="Subtitle color"></label>
+        <label class="handwriting-import" title="Upload a ZIP or multiple images named for each glyph, such as A.png, 0.png, or exclamation.png"><span>Import handwriting</span><input id="glyphPack" type="file" accept="image/*,.zip,application/zip" multiple></label>
+        <span id="glyphPackStatus" class="glyph-pack-status" aria-live="polite"></span>
+      </section>
+      <section class="design-tools" aria-label="Logo designs and palettes">
+        <div class="configuration-row">
+          <label class="dropdown-control"><span>Logo configuration</span><select id="logoConfiguration" aria-label="Professional logo configuration"><option value="">Choose a design…</option></select></label>
+          <label class="dropdown-control palette-control"><span>Monochrome palette</span><select id="monoPalette" aria-label="Grayscale and black-and-white palette"></select></label>
+          <label class="dropdown-control visual-control"><span>Visual enhancement</span><select id="visualEnhancement" aria-label="Visual enhancement"><option value="">Original</option></select></label>
+          <small id="visualDescription" class="visual-description">Original finish</small>
+        </div>
+        <p id="configurationDescription" class="configuration-description" aria-live="polite">Choose a configuration to read its design notes.</p>
+      </section>
+      <section class="scroll-editor" id="scrollEditor" hidden aria-label="Scrolling text">
+        <div class="scroll-editor-head"><span>Scroll text</span><button id="loadStoryDemo" type="button">Load Alice demo</button></div>
+        <label class="scroll-theme-control"><span>Color theme</span><select id="scrollTheme" aria-label="Scrolling text color theme"></select><i id="scrollThemeSwatch" aria-hidden="true"></i></label>
+        <textarea id="scrollInput" aria-label="Text to scroll" spellcheck="false"></textarea>
+        <small>Lewis Carroll, <i>Alice’s Adventures in Wonderland</i> (1865, public domain excerpt)</small>
+      </section>
+      <section class="sizing" aria-label="Font size controls">
+        <label class="size-control"><span>Logo size</span><input id="logoSize" type="range" min="48" max="240" value="182" aria-label="Logo font size"><output id="logoSizeValue" for="logoSize">182</output></label>
+        <label class="size-control"><span>Subtitle size</span><input id="subtitleSize" type="range" min="12" max="72" value="38" aria-label="Subtitle font size"><output id="subtitleSizeValue" for="subtitleSize">38</output></label>
+      </section>
+      <audio id="logoAudio" src="bardel-intro.wav" preload="auto"></audio>
+      <nav class="actions" aria-label="Logo actions">
+        <button class="scroll-mode-toggle" id="scrollModeToggle" type="button" aria-pressed="false">Scroll Mode</button>
+        <button class="replay" id="replay" type="button" aria-label="Replay logo intro with sound" title="Replay intro">↻</button>
+        <button class="sound" id="soundToggle" type="button" aria-label="Sound on" aria-pressed="true" title="Toggle intro sound">♫</button>
+        <button class="randomize" id="randomize" type="button" title="Randomize letters and colors">Random</button>
+        <button class="random-style" id="randomLetterStyle" type="button" title="Choose a random logo letter style">Random Letter Style</button>
+        <button class="random-style" id="randomStylePair" type="button" title="Choose a random logo and subtitle style combination">Random Style Pair</button>
+        <button class="motion" id="motion" type="button" title="Cycle through 220 letter entrance animations">220 Motions</button>
+        <span class="divider" aria-hidden="true"></span>
+        <button class="download" id="png" type="button">PNG <span>↓</span></button>
+        <button class="download" id="jpg" type="button">JPG <span>↓</span></button>
+        <button class="download motion-export" id="flv" type="button" title="Download the selected motion as an FLV video">FLV <span>↓</span></button>
+        <button class="download motion-export" id="gifZip" type="button" title="Download the selected motion as a GIF inside a ZIP archive">GIF ZIP <span>↓</span></button>
+        <span id="exportStatus" class="export-status" role="status" aria-live="polite"></span>
+      </nav>
+      <nav class="scroll-actions" id="scrollActions" aria-label="Scrolling text downloads" hidden>
+        <button class="download" id="scrollPng" type="button">PNG <span>↓</span></button>
+        <button class="download" id="scrollJpg" type="button">JPG <span>↓</span></button>
+        <button class="download" id="scrollFlv" type="button">FLV <span>↓</span></button>
+        <button class="download" id="scrollMp4" type="button">MP4 <span>↓</span></button>
+        <button class="download" id="scrollGif" type="button">GIF <span>↓</span></button>
+        <span id="scrollExportStatus" class="export-status" role="status" aria-live="polite"></span>
+      </nav>
+      <details class="sequence-panel" id="sequencePanel">
+        <summary>Create sequence</summary>
+        <div class="sequence-builder">
+          <div class="sequence-entry-row">
+            <button id="addCurrentLogo" type="button">Add current logo</button>
+            <button id="addSequenceText" type="button">Add scrolling text</button>
+            <button id="playSequence" type="button">Play</button>
+            <button id="stopSequence" type="button" disabled>Stop</button>
+            <button id="clearSequence" type="button">Clear</button>
+          </div>
+          <textarea id="sequenceEntry" aria-label="Text for sequence item" placeholder="Paste long text to add as a scroll scene"></textarea>
+          <ol id="sequenceList" class="sequence-list" aria-label="Sequence items"></ol>
+          <div class="sequence-export-row">
+            <button class="sequence-download" data-format="png" type="button">PNG</button>
+            <button class="sequence-download" data-format="jpg" type="button">JPG</button>
+            <button class="sequence-download" data-format="gif" type="button">GIF</button>
+            <button class="sequence-download" data-format="zip" type="button">GIF ZIP</button>
+            <button class="sequence-download" data-format="flv" type="button">FLV</button>
+            <button class="sequence-download" data-format="mp4" type="button">MP4</button>
+            <span id="sequenceStatus" class="export-status" role="status" aria-live="polite"></span>
+          </div>
+        </div>
+      </details>
+    </aside>
+    <div class="sidebar-scrim" id="sidebarScrim" aria-hidden="true"></div>
+    <section class="stage" aria-label="Logo preview">
+      <div class="logo" id="logo">
+        <div class="word" id="word" aria-label="Bardel"></div>
+        <div class="entertainment" id="subtitle">Entertainment</div>
+      </div>
+      <div class="scroll-stage" id="scrollStage" aria-label="Scrolling text preview"><div class="scroll-text" id="scrollText"></div></div>
+      <div class="sequence-display" id="sequenceDisplay" aria-label="Sequence preview"></div>
+    </section>
+    <footer class="signature">JORJ2026RMX</footer>
+  </main>
+<script src="../storeback.js"></script>
+</body>
+</html>

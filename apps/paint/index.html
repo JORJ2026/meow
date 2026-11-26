@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Paint 3D</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="three.css">
+<link rel="stylesheet" href="features.css">
+<script type="importmap">{"imports":{"three":"https://esm.sh/three@0.170.0","three/addons/":"https://esm.sh/three@0.170.0/examples/jsm/"}}</script>
+</head>
+<body>
+<div class="app-shell">
+  <header class="titlebar">
+    <div class="doc-title" id="docTitle" contenteditable="true" spellcheck="false">Untitled - Paint 3D</div>
+    <div class="window-controls"><button aria-label="Minimize"><i data-lucide="minus"></i></button><button aria-label="Maximize"><i data-lucide="square"></i></button><button aria-label="Close"><i data-lucide="x"></i></button></div>
+  </header>
+  <nav class="ribbon">
+    <button class="menu-tab" id="menuBtn"><i data-lucide="menu"></i><span>Menu</span></button><div class="tabs" role="tablist">
+      <button class="tab active" data-tab="brushes"><i class="tab-icon" data-lucide="pencil"></i>Brushes</button>
+      <button class="tab" data-tab="shapes"><i class="tab-icon" data-lucide="shapes"></i>2D shapes</button>
+      <button class="tab" data-tab="three"><i class="tab-icon" data-lucide="box"></i>3D shapes</button>
+      <button class="tab" data-tab="stickers"><i class="tab-icon" data-lucide="sticker"></i>Stickers</button>
+      <button class="tab" data-tab="text"><i class="tab-icon" data-lucide="type"></i>Text</button>
+      <button class="tab" data-tab="effects"><i class="tab-icon" data-lucide="sun"></i>Effects</button>
+      <button class="tab" data-tab="canvas"><i class="tab-icon" data-lucide="layout-dashboard"></i>Canvas</button>
+      <button class="tab" data-tab="library"><i class="tab-icon" data-lucide="library"></i>3D library</button>
+    </div>
+    <div class="quick-actions">
+      <button id="pasteBtn" title="Paste"><i data-lucide="clipboard-paste"></i><span>Paste</span></button><button id="undoBtn" title="Undo"><i data-lucide="undo-2"></i><span>Undo</span></button><button id="historyBtn" title="History"><i data-lucide="history"></i><span>History</span></button><button id="redoBtn" title="Redo"><i data-lucide="redo-2"></i><span>Redo</span></button><button id="ribbonCollapse" title="Collapse ribbon"><i data-lucide="chevron-up"></i></button>
+    </div>
+  </nav>
+  <div class="subbar"><div id="contextLabel">Draw with a brush</div><div class="subtools"><button id="selectBtn"><i data-lucide="mouse-pointer-2"></i> Select</button><button id="cropBtn"><i data-lucide="crop"></i> Crop</button><button id="magicBtn"><i data-lucide="wand-sparkles"></i> Magic select</button><button class="mixed-reality" disabled><i data-lucide="box"></i> Mixed reality</button><button id="make3dBtn" hidden><i data-lucide="box"></i> Make 3D</button><button id="view3dBtn" aria-pressed="false"><i data-lucide="box"></i> 3D view</button><div class="zoom-controls"><button id="zoomOut" title="Zoom out"><i data-lucide="minus"></i></button><input id="zoom" type="range" min="10" max="3200" value="100" aria-label="Canvas zoom"><button id="zoomIn" title="Zoom in"><i data-lucide="plus"></i></button></div><span class="zoom-readout">100%</span><button id="moreBtn" aria-label="More options"><i data-lucide="ellipsis"></i></button><span id="toolReadout">Marker</span><div class="quick-menu" id="quickMenu" hidden><button data-quick="clear"><i data-lucide="x"></i> Clear canvas</button><button data-quick="undo"><i data-lucide="undo-2"></i> Undo</button><button data-quick="redo"><i data-lucide="redo-2"></i> Redo</button><button data-quick="paste"><i data-lucide="clipboard"></i> Paste</button><button data-quick="canvas"><i data-lucide="layout-dashboard"></i> Canvas options</button><button data-quick="controls"><i data-lucide="move-3d"></i> Show interaction controls</button><button data-quick="reset"><i data-lucide="rotate-ccw"></i> Reset view</button><button data-quick="screenshot"><i data-lucide="camera"></i> Take screenshot</button></div></div></div>
+  <main class="work-area">
+    <section class="stage" id="stage">
+      <div class="zoom-frame" id="zoomFrame"><div class="canvas-wrap" id="canvasWrap"><canvas id="paint" width="1280" height="720"></canvas><canvas id="preview" width="1280" height="720"></canvas></div></div>
+      <div class="viewport-3d" id="viewport3d" hidden><div id="threeHost"></div><div class="viewport-hint">Drag to orbit · scroll to zoom · right-drag to pan</div><div class="scene-count" id="sceneCount">0 objects</div></div>
+    </section>
+    <aside class="inspector" id="inspector"></aside>
+  </main>
+  <footer class="statusbar"><span id="statusLeft">1280 × 720 px</span><span id="statusRight">Ready</span></footer>
+</div>
+<input type="file" id="fileInput" accept="image/*,.paint3d,.json,.glb,model/gltf-binary" hidden>
+<div class="welcome-screen" id="welcomeScreen">
+  <div class="welcome-card"><button class="welcome-action" id="welcomeNew"><span><i data-lucide="file-plus-2"></i></span><b>New</b></button><button class="welcome-action" id="welcomeOpen"><span><i data-lucide="folder-open"></i></span><b>Open</b></button><label class="welcome-check"><input id="skipWelcome" type="checkbox"> Show welcome screen</label></div>
+</div>
+<div class="file-menu" id="fileMenu" hidden>
+  <aside class="file-rail"><button class="file-back" id="fileBack"><i data-lucide="arrow-left"></i> Back</button><button class="file-item" data-file="new"><i data-lucide="file-plus-2"></i> New</button><button class="file-item" data-file="open"><i data-lucide="folder-open"></i> Open</button><button class="file-item" data-file="insert"><i data-lucide="download"></i> Insert</button><button class="file-item" data-file="save"><i data-lucide="save"></i> Save</button><button class="file-item" data-file="saveas"><i data-lucide="files"></i> Save as</button><hr><button class="file-item" data-file="print"><i data-lucide="printer"></i> Print</button><button class="file-item muted" data-file="mixed"><i data-lucide="box"></i> View model in mixed reality</button><button class="file-item" data-file="share"><i data-lucide="share-2"></i> Share</button><div class="rail-bottom"><button class="file-item" data-file="settings"><i data-lucide="settings-2"></i> Settings</button><button class="file-item" data-file="help"><i data-lucide="circle-help"></i> Learn and Feedback</button></div></aside>
+  <section class="file-content" id="fileContent"></section>
+</div>
+<div class="save-dialog" id="saveDialog" hidden><div class="save-panel"><button class="dialog-close" id="closeSave"><i data-lucide="x"></i></button><h2>Save as copy</h2><p>Choose how to save</p><div class="save-options"><button data-saveformat="png"><span><i data-lucide="image"></i></span>Image (PNG)</button><button data-saveformat="glb"><span><i data-lucide="box"></i></span>3D model (.glb)</button><button data-saveformat="paint3d"><span><i data-lucide="shapes"></i></span>Openable Paint 3D project</button></div></div></div>
+<div class="color-dialog" id="colorDialog" hidden><section class="color-panel" role="dialog" aria-modal="true" aria-labelledby="colorDialogTitle"><h2 id="colorDialogTitle">Edit color</h2><div class="color-edit-body"><div class="color-edit-main"><div class="color-plane" id="colorPlane" role="slider" aria-label="Color saturation and brightness" tabindex="0"><i id="colorMarker"></i></div><input type="range" id="hueRange" min="0" max="359" value="0" aria-label="Hue"></div><div class="color-edit-fields"><div class="color-preview" id="colorPreview"></div><label>Red<input id="colorRed" type="number" min="0" max="255"></label><label>Green<input id="colorGreen" type="number" min="0" max="255"></label><label>Blue<input id="colorBlue" type="number" min="0" max="255"></label><label>Hex<input id="colorHex" type="text" maxlength="7" spellcheck="false"></label></div></div><div class="color-dialog-actions"><button id="colorCancel">Cancel</button><button class="primary" id="colorApply">OK</button></div></section></div>
+<div class="toast" id="toast"></div>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
+<script type="module" src="app.js"></script>
+<script src="../storeback.js"></script>
+</body></html>
