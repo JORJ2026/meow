@@ -1763,7 +1763,7 @@ function introPress(){
   if(introT>45)endIntro();
 }
 let gateStage=0;
-function introSong(){try{window.CQMidi&&CQMidi.play('hard-knock-life',15);}catch(e){}}
+function introSong(){try{window.CQMidi&&CQMidi.play('hard-knock-life',45);}catch(e){}}
 function watchIntro(){gateStage=2;introOn=1;introT=0;introSong();}
 function endIntro(){introOn=0;gateStage=0;state='menu';showMenu();}
 function startIntro(direct){state='intro';gateStage=direct===true||(direct&&direct.type)?2:0;introOn=gateStage===2?1:0;introT=0;if(introOn)introSong();$('menu').classList.add('hide');$('msg').classList.add('hide');}
@@ -1937,6 +1937,9 @@ function drawIntro0(){
     ctx.restore();
     
   }
+  if(t>=860&&Math.floor(t/30)%2===0){ctx.save();ctx.font='bold 20px system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.lineWidth=4;ctx.strokeStyle='rgba(30,20,40,.75)';ctx.fillStyle='#fff';const hint=(matchMedia('(pointer:coarse)').matches?'Tap':'Press any key')+' to continue';
+    ctx.strokeText(hint,VW/2,190);ctx.fillText(hint,VW/2,190);ctx.restore();}
   if(t<30){ctx.fillStyle='rgba(0,0,0,'+(1-t/30)+')';ctx.fillRect(0,0,VW,VH);}
   
 }
@@ -2213,6 +2216,7 @@ function startLevel(){
   document.getElementById('msg').classList.add('hide');
 }
 function showMenu(){
+  if(state!=='menu'&&state!=='intro'){try{window.CQMidi&&CQMidi.stop();}catch(_){}}   /* leaving a game: stop its song */
   state='menu';story=false;RUN=false;RUNNODE=null;try{setLv(lvIdx);}catch(_){}
   try{syncSel();}catch(_){}
   document.getElementById('menu').classList.remove('hide');
@@ -2284,7 +2288,7 @@ function update(){
   if(shake>0)shake*=0.85;
   for(const q of parts){q.x+=q.vx;q.y+=q.vy;q.vy+=0.18;q.life--;} parts=parts.filter(q=>q.life>0);
   for(const t of texts){t.t++;t.y-=0.6;} texts=texts.filter(t=>t.t<50);
-  if(state==='intro'){introMusic(introOn?introT:-1);if(introOn){introT++;if(introT>=352)endIntro();}return;}
+  if(state==='intro'){introMusic(introOn?introT:-1);if(introOn){introT++;}   /* the intro holds on the title until a tap / key / button */return;}
   if(state==='world'){owTick();return;}
   if(state==='menu'||!L)return;
   if(state==='dead'){ P.vy+=0.6; P.y+=P.vy; return; }
@@ -4820,6 +4824,10 @@ document.addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.c
 
 startIntro();
 requestAnimationFrame(frame);
+/* music: a new random song when a game starts (it stops again in showMenu when you leave the game) */
+(()=>{let was='intro';setInterval(()=>{const inGame=state!=='menu'&&state!=='intro',wasGame=was!=='menu'&&was!=='intro';
+  if(inGame&&!wasGame){try{if(window.CQMidi){const c=CQMidi.current();if(!c||/hard-knock/.test(c.id))CQMidi.random();}}catch(_){}}
+  was=state;},200);})();
 
 // mobile: world map button while playing story mode
 (()=>{const b=document.getElementById('mapb');if(!b)return;

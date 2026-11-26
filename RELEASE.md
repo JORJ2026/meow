@@ -36,3 +36,11 @@ Music: 19 MIDI songs in music/ play shuffled in every game; Hard Knock Life play
 
 ## 1.5.1
 - MIDI app: new **Cat Games** section with all 24 songs from the game soundtrack (Track 1–24, same numbers as in the games). They play on the piano visualizer with the drum track left out.
+
+## 1.5.2
+- Intro no longer cuts off after about 6 seconds. It plays all the way to the CAT QUEST title, then waits there with "Tap / Press any key to continue". Tapping still skips it early if you want.
+
+## 1.5.3
+- Music stops when you exit a game (back to the menu/store, or leaving a game page). A new random song starts when the next game starts.
+- Intro song (Hard Knock Life) now plays for 45 seconds instead of 15.
+- All MIDI music (cat games, Elk River Bandit, MIDI app) has a volume limiter so it never gets too loud, plus a slight synth layer.

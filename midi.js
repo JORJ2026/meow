@@ -3,8 +3,9 @@
    - reads Standard MIDI Files (format 0/1/2, tempo changes, program / volume / pan changes, drums on channel 10)
    - plays a random 30-second piece of each song, then moves on to another random song (no repeats until all have played)
    - songs are only ever shown as "Track 1", "Track 2"... (their number in music/playlist.json), never by name
-   - CQMidi.play('jay-z-hard-knock-life', 15) plays the first 15 s of one song;  CQMidi.next() skips;  CQMidi.mute(true|false)
+   - CQMidi.play('jay-z-hard-knock-life', 45) plays 45 s of one song;  CQMidi.next() skips;  CQMidi.mute(true|false)
    - a very small bar at the top of every page shows the track number with next and mute buttons
+   - a volume limiter caps the loudness, and a quiet detuned saw layer gives every instrument a slight synth sound
    - set window.CQ_MUSIC_HOLD = 1 before loading to stop it starting a random song on the first tap */
 (function () {
   'use strict';
@@ -87,7 +88,10 @@
     var C = window.AudioContext || window.webkitAudioContext; if (!C) return null;
     try { AC = new C({ latencyHint: 'playback' }); } catch (e) { try { AC = new C(); } catch (e2) { return null; } }
     var comp = AC.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 6; comp.attack.value = 0.005; comp.release.value = 0.2;
-    master = AC.createGain(); master.gain.value = 0.36 * gameVol; master.connect(comp); comp.connect(AC.destination);
+    master = AC.createGain(); master.gain.value = 0.36 * gameVol; master.connect(comp);
+    // volume limiter: a hard ceiling after the compressor so loud songs or busy parts never blast or clip
+    var lim = AC.createDynamicsCompressor(); lim.threshold.value = -6; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.001; lim.release.value = 0.12;
+    var ceil = AC.createGain(); ceil.gain.value = 0.9; comp.connect(lim); lim.connect(ceil); ceil.connect(AC.destination);
     mkChans();
     var n = AC.sampleRate, b = AC.createBuffer(1, n, AC.sampleRate), x = b.getChannelData(0);
     for (var j = 0; j < n; j++) x[j] = Math.random() * 2 - 1;
@@ -156,6 +160,8 @@
     var os = [o1];
     if (R.w2) { var o2 = AC.createOscillator(), g2 = AC.createGain(); o2.type = R.w2; o2.frequency.value = R.sub ? f / 2 : (R.det ? f : f * 2); if (R.det) o2.detune.value = R.det; g2.gain.value = R.det ? 0.8 : 0.35; o2.connect(g2); g2.connect(fl); o2.start(t); o2.stop(stopAt); os.push(o2); }
     if (R.vib) { var lf = AC.createOscillator(), lg = AC.createGain(); lf.frequency.value = 5.2; lg.gain.value = f * 0.006; lf.connect(lg); lg.connect(o1.frequency); lf.start(t + 0.15); lf.stop(stopAt); }
+    // slight synth: a quiet, slightly detuned sawtooth layer under every instrument
+    var o3 = AC.createOscillator(), g3 = AC.createGain(); o3.type = 'sawtooth'; o3.frequency.value = f; o3.detune.value = 7; g3.gain.value = 0.09; o3.connect(g3); g3.connect(fl); o3.start(t); o3.stop(stopAt);
     voices++; o1.onended = function () { voices--; try { e.disconnect(); fl.disconnect(); } catch (x) { } };
   }
 
@@ -246,6 +252,7 @@
     else if (!want && !window.CQ_MUSIC_HOLD && !cur) api.random();
   }
   ['pointerdown', 'touchend', 'mousedown', 'keydown', 'click'].forEach(function (ev) { addEventListener(ev, unlock, { capture: true, passive: true }); });
+  addEventListener('pagehide', function () { try { api.stop(); if (AC) AC.suspend(); } catch (e) { } });   // leaving the game page: stop the song
   document.addEventListener('visibilitychange', function () {
     if (!AC) return;
     if (document.hidden) { try { AC.suspend(); } catch (e) { } } else if (!paused) resume();
