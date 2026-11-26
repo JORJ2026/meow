@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#2b1d6b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Old School</title>
+<style>
+/* Old School: a handheld that plays your homemade GBA and SNES ROMs. Square edges everywhere. */
+:root{--shell:#4b36b8;--shell2:#3a2a94;--shell3:#2b1d6b;--ink:#0d0a1e;--btn:#1d1640;--hi:#ffd84a;--txt:#f1edff;
+  --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);--sal:env(safe-area-inset-left,0px);--sar:env(safe-area-inset-right,0px)}
+*{box-sizing:border-box;border-radius:0!important;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;background:#120c2a;color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;overscroll-behavior:none}
+button{font:inherit;color:inherit;border:0;cursor:pointer;touch-action:manipulation}
+.hide{display:none!important}
+
+/* ---------- handheld body ---------- */
+#gba{position:fixed;inset:0;display:grid;padding:calc(var(--sat) + 8px) calc(var(--sar) + 10px) calc(var(--sab) + 8px) calc(var(--sal) + 10px);
+  background:linear-gradient(160deg,var(--shell),var(--shell2) 60%,var(--shell3));
+  grid-template-columns:minmax(130px,1fr) minmax(0,3.2fr) minmax(130px,1fr);grid-template-rows:auto 1fr auto;
+  grid-template-areas:"ll top rr" "left screen right" "left bottom right";gap:8px 14px}
+#gba::before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 2px,transparent 2px 7px)}
+.shoulder{align-self:start;height:34px;background:var(--shell3);border:2px solid rgba(255,255,255,.18);border-bottom-width:5px;border-bottom-color:rgba(0,0,0,.4);font:900 15px system-ui;color:#c9bfff;width:100%}
+#bL{grid-area:ll}#bR{grid-area:rr}
+#top{grid-area:top;display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+#top .logo{font:900 15px/1 system-ui;letter-spacing:3px;color:#cfc6ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#top .logo b{color:var(--hi)}
+.tb{height:30px;padding:0 10px;background:rgba(10,6,30,.45);border:1px solid rgba(255,255,255,.25);font:700 12px system-ui;color:#fff;white-space:nowrap;display:inline-flex;align-items:center;text-decoration:none}
+.tb:active{background:rgba(255,255,255,.2)}
+.tbs{display:flex;gap:6px}
+
+/* screen */
+#bezel{grid-area:screen;min-height:0;min-width:0;background:#1a1530;border:3px solid #0b0816;box-shadow:inset 0 0 0 6px #27204a;padding:14px 14px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative}
+#bezel .led{position:absolute;left:10px;top:50%;width:8px;height:8px;background:#3a2a50;box-shadow:0 0 0 2px #0b0816}
+#bezel.on .led{background:#7dff6a;box-shadow:0 0 8px #7dff6a,0 0 0 2px #0b0816}
+#screen{flex:1 1 auto;min-height:0;width:100%;position:relative;background:#9fb38a;overflow:hidden;display:flex;align-items:center;justify-content:center}
+#game{position:absolute;inset:0}
+#bezel .brand{font:italic 900 11px system-ui;letter-spacing:2px;color:#8f86c7}
+
+/* left: d-pad */
+#left{grid-area:left;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#dpad{position:relative;width:132px;height:132px;touch-action:none}
+#dpad i{position:absolute;background:var(--btn);border:2px solid #0b0816;display:grid;place-items:center;font-style:normal;color:#8f86c7;font-size:16px}
+#dpad .u{left:44px;top:0;width:44px;height:48px}#dpad .d{left:44px;bottom:0;width:44px;height:48px}
+#dpad .l{top:44px;left:0;width:48px;height:44px}#dpad .r{top:44px;right:0;width:48px;height:44px}
+#dpad .c{left:42px;top:42px;width:48px;height:48px;border:0;background:var(--btn)}
+#dpad i.on{background:#3a2f77;color:#fff}
+
+/* right: A B (and X Y for SNES) */
+#right{grid-area:right;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+#face{position:relative;width:150px;height:132px}
+.fb{position:absolute;width:62px;height:62px;background:#a22a4e;border:2px solid #0b0816;border-bottom-width:6px;font:900 20px system-ui;color:#ffd6e2;touch-action:none}
+.fb.on{transform:translateY(3px);border-bottom-width:3px;filter:brightness(1.25)}
+#bA{right:0;top:14px}#bB{left:8px;top:58px}
+.fb.sm{width:44px;height:40px;font-size:14px;background:#3b2f80;color:#d7d0ff}
+#bX{right:12px;top:-44px}#bY{left:20px;top:2px}
+body:not(.snes) #bX,body:not(.snes) #bY{display:none}
+#bottom{grid-area:bottom;display:flex;justify-content:center;gap:22px;align-items:center}
+.ss{display:flex;flex-direction:column;align-items:center;gap:3px;font:800 10px system-ui;letter-spacing:1px;color:#b3a9ef}
+.ss button{width:58px;height:16px;background:#221a4c;border:2px solid #0b0816;touch-action:none}
+.ss button.on{background:#5a4cb0}
+.speaker{position:absolute;right:calc(var(--sar) + 22px);bottom:calc(var(--sab) + 14px);width:56px;height:30px;background:repeating-linear-gradient(90deg,#24196a 0 3px,transparent 3px 8px);opacity:.7;pointer-events:none}
+
+/* portrait phone: screen on top, controls under it (same handheld colours) */
+@media (orientation:portrait){
+  #gba{grid-template-columns:1fr 1fr;grid-template-rows:auto auto auto 1fr auto;
+    grid-template-areas:"top top" "screen screen" "ll rr" "left right" "bottom bottom";gap:10px 12px}
+  #bezel{aspect-ratio:3/2.25;width:100%;max-height:52vh}
+  #dpad{width:150px;height:150px}
+  #dpad .u{left:50px;width:50px;height:54px}#dpad .d{left:50px;width:50px;height:54px}
+  #dpad .l{top:50px;width:54px;height:50px}#dpad .r{top:50px;width:54px;height:50px}
+  #dpad .c{left:48px;top:48px;width:54px;height:54px}
+  .speaker{display:none}
+}
+@media (orientation:landscape) and (max-height:430px){
+  #gba{gap:4px 10px;padding-top:calc(var(--sat) + 4px);padding-bottom:calc(var(--sab) + 4px)}
+  #bezel{padding:8px 10px 4px}
+  #dpad{transform:scale(.88)}#face{transform:scale(.88)}
+  .shoulder{height:28px}
+}
+
+/* ---------- cartridge shelf ---------- */
+#shelf{position:fixed;inset:0;z-index:20;background:#120c2a;display:flex;flex-direction:column;padding:calc(var(--sat) + 10px) calc(var(--sar) + 12px) calc(var(--sab) + 12px) calc(var(--sal) + 12px)}
+#shelf header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+#shelf h1{margin:0;font:900 24px/1 system-ui;letter-spacing:4px;color:var(--hi);text-shadow:3px 3px 0 #a22a4e;flex:1;text-align:center}
+#shelf p.sub{margin:0 0 10px;text-align:center;color:#b3a9ef;font:600 13px system-ui}
+#carts{flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;align-content:start;padding-bottom:12px;-webkit-overflow-scrolling:touch}
+.cart{position:relative;background:#2f2f38;border:2px solid #0b0816;border-bottom-width:6px;padding:8px 8px 10px;text-align:left;display:flex;flex-direction:column;gap:6px;min-height:150px}
+.cart.snes{background:#8a8a96}
+.cart:active{transform:translateY(2px)}
+.cart .lab{flex:1;background:var(--c,#4b36b8);border:2px solid rgba(0,0,0,.35);display:flex;flex-direction:column;justify-content:flex-end;padding:8px;min-height:84px;position:relative;overflow:hidden}
+.cart .lab::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,.08) 0 6px,transparent 6px 14px)}
+.cart .lab b{position:relative;font:900 15px/1.15 system-ui;color:#fff;text-shadow:2px 2px 0 rgba(0,0,0,.45)}
+.cart .lab small{position:relative;font:700 11px system-ui;color:rgba(255,255,255,.85)}
+.cart .sys{font:900 10px system-ui;letter-spacing:2px;color:#fff;background:#0b0816;align-self:flex-start;padding:3px 6px}
+.cart.snes .sys{background:#5a4cb0}
+.cart .grip{position:absolute;left:8px;right:8px;top:2px;height:4px;background:repeating-linear-gradient(90deg,rgba(0,0,0,.35) 0 4px,transparent 4px 8px)}
+#own{border:2px dashed #6a5ad0;background:transparent;color:#cfc6ff;font:800 14px system-ui;min-height:150px}
+#note{font:600 12px system-ui;color:#8f86c7;text-align:center;margin:8px 0 0}
+
+/* loading / error overlay on the screen */
+#msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:12px;background:#1a1530;color:#cfc6ff;font:700 14px system-ui;z-index:5}
+#msg b{color:var(--hi);font-size:16px}
+#msg button{margin-top:6px}
+/* hide EmulatorJS's own on-screen pad and menu bar: the handheld's buttons are the controls */
+.ejs_virtualGamepad_parent,.ejs_menu_bar,.ejs_virtualGamepad_open{display:none!important}
+#game canvas{image-rendering:pixelated}
+</style>
+</head>
+<body>
+
+<!-- ===== cartridge shelf ===== -->
+<section id="shelf" aria-label="Pick a cartridge">
+  <header>
+    <a class="tb" href="../../index.html" aria-label="Back to the Cat Quest store">‹ Store</a>
+    <h1>OLD SCHOOL</h1>
+    <span class="tb" style="visibility:hidden">‹ Store</span>
+  </header>
+  <p class="sub">Your homemade GBA and SNES games. Pick a cartridge.</p>
+  <div id="carts"></div>
+  <input type="file" id="file" accept=".gba,.sfc,.smc,.gb,.gbc" hidden>
+  <p id="note">Games save in this browser. The emulator downloads the first time you play (needs internet once).</p>
+</section>
+
+<!-- ===== handheld ===== -->
+<main id="gba" class="hide">
+  <button class="shoulder" id="bL" data-k="10">L</button>
+  <div id="top">
+    <span class="logo" id="title">OLD <b>SCHOOL</b></span>
+    <span class="tbs">
+      <button class="tb" id="bSave" title="Save state">💾 Save</button>
+      <button class="tb" id="bLoad" title="Load state">📂 Load</button>
+      <button class="tb" id="bEject" title="Back to the cartridges">⏏ Eject</button>
+    </span>
+  </div>
+  <button class="shoulder" id="bR" data-k="11">R</button>
+
+  <div id="left"><div id="dpad" aria-label="D-pad"><i class="u">▲</i><i class="l">◀</i><i class="c"></i><i class="r">▶</i><i class="d">▼</i></div></div>
+
+  <div id="bezel"><span class="led"></span>
+    <div id="screen"><div id="game"></div><div id="msg"><b>Loading…</b></div></div>
+    <span class="brand">OLD SCHOOL ADVANCE</span>
+  </div>
+
+  <div id="right"><div id="face">
+    <button class="fb sm" id="bX" data-k="9">X</button><button class="fb sm" id="bY" data-k="1">Y</button>
+    <button class="fb" id="bA" data-k="8">A</button><button class="fb" id="bB" data-k="0">B</button>
+  </div></div>
+
+  <div id="bottom">
+    <div class="ss"><button data-k="2" aria-label="Select"></button>SELECT</div>
+    <div class="ss"><button data-k="3" aria-label="Start"></button>START</div>
+  </div>
+  <span class="speaker"></span>
+</main>
+
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  /* the cartridges: one entry per different ROM (exact copies were left out) */
+  const CARTS = [
+    { f: 'wildroot.gba', n: 'Wildroot', c: '#2f7a3a' },
+    { f: 'wildhaven.gba', n: 'Wildhaven', s: 'v1.0', c: '#1f6a6a' },
+    { f: 'wildwood.gba', n: 'Wildwood', s: 'v0.4', c: '#5a7a2a' },
+    { f: 'lantern-woods-harvest-moon.sfc', n: 'Lantern Woods + Harvest Moon', c: '#b8641c' },
+    { f: 'bayside-bandit.sfc', n: 'Bayside Bandit', c: '#1f4fa0' },
+    { f: 'lumis-tower.sfc', n: "Lumi's Tower", c: '#6a2fa0' },
+    { f: 'pips-pizza-panic.sfc', n: "Pip's Pizza Panic", s: 'v1.3', c: '#c0392b' },
+    { f: 'pips-solitaire-party-a.sfc', n: "Pip's Solitaire Party", s: 'version A', c: '#1f7a4a' },
+    { f: 'pips-solitaire-party-b.sfc', n: "Pip's Solitaire Party", s: 'version B', c: '#1f7a4a' },
+    { f: 'jacks-or-better-a.sfc', n: 'Jacks or Better!', s: 'version A (512 KB)', c: '#8a1f3a' },
+    { f: 'jacks-or-better-b.sfc', n: 'Jacks or Better!', s: 'version B (1 MB)', c: '#8a1f3a' },
+    { f: 'homebrew-bundle.sfc', n: 'Homebrew Bundle', c: '#3a3a8a' },
+    { f: 'multicart-bravo-a.sfc', n: 'Multicart Bravo', s: 'version A (256 KB)', c: '#4a4a5a' },
+    { f: 'multicart-bravo-b.sfc', n: 'Multicart Bravo', s: 'version B (1 MB)', c: '#4a4a5a' },
+    { f: 'multicart-bravo-c.sfc', n: 'Multicart Bravo', s: 'version C (1 MB)', c: '#4a4a5a' }
+  ];
+  const coreFor = f => /\.gba$/i.test(f) ? 'gba' : /\.gbc?$/i.test(f) ? 'gb' : 'snes';
+  const sysName = c => c === 'gba' ? 'GBA' : c === 'gb' ? 'GAME BOY' : 'SNES';
+
+  /* ---------- shelf ---------- */
+  const carts = $('carts');
+  CARTS.forEach(k => {
+    const core = coreFor(k.f), b = document.createElement('button');
+    b.className = 'cart ' + core; b.style.setProperty('--c', k.c);
+    b.innerHTML = '<span class="grip"></span><span class="sys">' + sysName(core) + '</span><span class="lab"><b></b><small></small></span>';
+    b.querySelector('b').textContent = k.n; b.querySelector('small').textContent = k.s || '';
+    b.onclick = () => { location.href = '?rom=' + encodeURIComponent(k.f); };
+    carts.appendChild(b);
+  });
+  const own = document.createElement('button'); own.id = 'own'; own.textContent = '＋ Play a ROM file from this device';
+  own.onclick = () => $('file').click(); carts.appendChild(own);
+  $('file').onchange = e => { const f = e.target.files && e.target.files[0]; if (f) boot(URL.createObjectURL(f), f.name, coreFor(f.name)); };
+
+  /* ---------- play page ---------- */
+  const rom = new URLSearchParams(location.search).get('rom');
+  if (rom) { const k = CARTS.find(c => c.f === rom); if (k) boot('roms/' + k.f, k.n + (k.s ? ' · ' + k.s : ''), coreFor(k.f)); else location.replace('./'); }
+
+  function boot(url, name, core) {
+  $('shelf').classList.add('hide'); $('gba').classList.remove('hide');
+  document.body.classList.toggle('snes', core === 'snes');
+  $('title').textContent = name; document.title = name + ' · Old School';
+  const msg = $('msg'), say = (h, retry) => { msg.classList.remove('hide'); msg.innerHTML = h + (retry ? '<button class="tb" onclick="location.reload()">↻ Try again</button><button class="tb" onclick="location.href=\'./\'">⏏ Cartridges</button>' : ''); };
+  say('<b>Inserting cartridge…</b>' + name);
+
+  /* EmulatorJS (free, open source) plays the ROM; its cores come from its CDN the first time */
+  window.EJS_player = '#game';
+  window.EJS_core = core;
+  window.EJS_gameUrl = url;
+  window.EJS_gameName = name.replace(/[^\w .-]/g, '');
+  window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+  window.EJS_startOnLoaded = true;
+  window.EJS_color = '#4b36b8';
+  window.EJS_backgroundColor = '#1a1530';
+  window.EJS_Buttons = { playPause: false, restart: false, mute: false, settings: false, fullscreen: false, saveState: false, loadState: false, screenRecord: false, gamepad: false, cheat: false, volume: false, saveSavFiles: false, loadSavFiles: false, quickSave: false, quickLoad: false, screenshot: false, cacheManager: false, exitEmulation: false };
+  window.EJS_onGameStart = () => { msg.classList.add('hide'); $('bezel').classList.add('on'); };
+  const s = document.createElement('script'); s.src = EJS_pathtodata + 'loader.js';
+  s.onerror = () => say('<b>Can\'t reach the emulator</b>It downloads from cdn.emulatorjs.org the first time. Check your internet connection.', true);
+  document.body.appendChild(s);
+  window.osName = name;
+  setTimeout(() => { if (!$('bezel').classList.contains('on') && !msg.classList.contains('hide')) msg.insertAdjacentHTML('beforeend', '<br><small>Tap the screen if it is waiting for you.</small>'); }, 9000);
+
+  }
+
+  /* ---------- buttons -> emulator (RetroPad ids: B0 Y1 Select2 Start3 Up4 Down5 Left6 Right7 A8 X9 L10 R11) ---------- */
+  const held = new Set();
+  function press(k, v) {
+    if (v ? held.has(k) : !held.has(k)) return;
+    v ? held.add(k) : held.delete(k);
+    try { const gm = window.EJS_emulator && EJS_emulator.gameManager; if (gm) gm.simulateInput(0, k, v ? 1 : 0); } catch (_) { }
+    if (v && navigator.vibrate) { try { navigator.vibrate(8); } catch (_) { } }
+  }
+  document.querySelectorAll('[data-k]').forEach(b => {
+    const k = +b.dataset.k;
+    const dn = e => { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (_) { } b.classList.add('on'); press(k, 1); };
+    const up = e => { b.classList.remove('on'); press(k, 0); };
+    b.addEventListener('pointerdown', dn); b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('lostpointercapture', up);
+    b.addEventListener('contextmenu', e => e.preventDefault());
+  });
+  /* d-pad: slide your thumb around it, diagonals included */
+  const pad = $('dpad'), dirs = { u: 4, d: 5, l: 6, r: 7 }, cells = { u: pad.querySelector('.u'), d: pad.querySelector('.d'), l: pad.querySelector('.l'), r: pad.querySelector('.r') };
+  let padId = null;
+  function padSet(want) { for (const d in dirs) { const on = want.has(d); cells[d].classList.toggle('on', on); press(dirs[d], on ? 1 : 0); } }
+  function padAt(e) {
+    const r = pad.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5, w = new Set(), t = .14;
+    if (Math.hypot(x, y) < .08) return padSet(w);
+    if (y < -t) w.add('u'); if (y > t) w.add('d'); if (x < -t) w.add('l'); if (x > t) w.add('r');
+    if (!w.size) { if (Math.abs(x) > Math.abs(y)) w.add(x < 0 ? 'l' : 'r'); else w.add(y < 0 ? 'u' : 'd'); }
+    padSet(w);
+  }
+  pad.addEventListener('pointerdown', e => { e.preventDefault(); padId = e.pointerId; try { pad.setPointerCapture(e.pointerId); } catch (_) { } padAt(e); });
+  pad.addEventListener('pointermove', e => { if (e.pointerId === padId) padAt(e); });
+  const padUp = e => { if (e.pointerId !== padId) return; padId = null; padSet(new Set()); };
+  pad.addEventListener('pointerup', padUp); pad.addEventListener('pointercancel', padUp); pad.addEventListener('lostpointercapture', padUp);
+
+  /* save / load state, eject */
+  const gm = () => window.EJS_emulator && EJS_emulator.gameManager;
+  $('bSave').onclick = () => { try { gm().quickSave(1); flash('💾 Saved'); } catch (_) { flash('Not ready yet'); } };
+  $('bLoad').onclick = () => { try { gm().quickLoad(1); flash('📂 Loaded'); } catch (_) { flash('Not ready yet'); } };
+  $('bEject').onclick = () => { try { if (gm() && gm().saveSaveFiles) gm().saveSaveFiles(); } catch (_) { } location.href = './'; };
+  function flash(t) { const b = $('title'), o = b.textContent; b.textContent = t; setTimeout(() => { b.textContent = window.osName || ''; }, 1200); }
+  addEventListener('pagehide', () => { try { if (gm() && gm().saveSaveFiles) gm().saveSaveFiles(); } catch (_) { } });
+})();
+</script>
+</body>
+</html>
